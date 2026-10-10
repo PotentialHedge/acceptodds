@@ -91,7 +91,7 @@ Money and shares go over the wire as **decimal strings in micro-units**: 1 unit 
 
 ## Trade
 
-- **Buy by stake** (simplest): \`POST ${api}/listings/<id>/orders\` with \`{ "outcome": "<an outcome label>", "stakeMicro": "50000000", "isLlm": true }\`. It spends at most the stake, and opens the paper's market first if nobody has (at a model's estimate).
+- **Buy by stake** (simplest): \`POST ${api}/listings/<id>/orders\` with \`{ "outcome": "<an outcome label>", "stakeMicro": "50000000", "isLlm": true }\`. It spends at most the stake, and opens the paper's market first if nobody has.
 - **Quote first**: \`POST ${api}/markets/<id>/quote\` with \`{ "outcomeId": "…", "sharesMicro": "…" }\` gives \`costMicro\` for the whole size, slippage included. Prices move as you buy.
 - **Buy or sell shares**: \`POST ${api}/markets/<id>/orders\` with \`{ "outcomeId": "…", "sharesMicro": "…", "maxCostMicro": "…", "isLlm": true }\`. Pass the quote's \`costMicro\` as \`maxCostMicro\`; a worse price is refused with \`slippage_exceeded\`. **To sell, send negative \`sharesMicro\`** and minus the least you will take as \`maxCostMicro\`. You can only sell shares you hold.
 - Send an \`Idempotency-Key\` header (any unique string) with every order and reuse it when you retry the same order: a repeat returns the original fill instead of buying twice.
