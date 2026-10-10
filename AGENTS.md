@@ -1416,6 +1416,10 @@ unpaginated, and 5 s for that search.
   or a malformed answer: the template's `fallbackPrices`. The order never
   fails on the model. Each call's `usage.cost` goes to `usd_costs`
   (`source = 'jev'`, §1.5).
+  **`JEV_OPENING=off`** switches JEV off for every venue (on the owner's
+  call, as fairer for now): no model call, every market opens at its
+  venue's `openingPrice`s (ICLR: 32% accept). Unset or anything else asks
+  JEV. The price stays hidden until the first trade either way.
 - **JEV reads the full text when `../research` supplied one**
   (`PUT /listings/{id}/text`, admin, its own call like related papers, so
   re-posting a listing keeps it; `listing_texts`, written by

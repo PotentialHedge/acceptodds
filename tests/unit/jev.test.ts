@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { floored, jevScore, jevTargetMean, normalQuantile, PRICE_FLOOR, ranked } from '@/server/jev';
+import { floored, jevOpeningEnabled, jevScore, jevTargetMean, normalQuantile, PRICE_FLOOR, ranked } from '@/server/jev';
 
 describe('floored', () => {
   it('keeps every price at or above the floor, summing to 1', () => {
@@ -83,6 +83,23 @@ describe('ranked', () => {
 
   it('is null without a reference', () => {
     expect(ranked([0.5, 0.5], [], prior, 0.5)).toBeNull();
+  });
+});
+
+describe('JEV opening switch', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('asks JEV unless JEV_OPENING turns it off', () => {
+    vi.stubEnv('JEV_OPENING', undefined);
+    expect(jevOpeningEnabled()).toBe(true);
+    for (const on of ['on', '1', 'true', '']) {
+      vi.stubEnv('JEV_OPENING', on);
+      expect(jevOpeningEnabled()).toBe(true);
+    }
+    for (const off of ['off', 'OFF', ' 0 ', 'false']) {
+      vi.stubEnv('JEV_OPENING', off);
+      expect(jevOpeningEnabled()).toBe(false);
+    }
   });
 });
 
