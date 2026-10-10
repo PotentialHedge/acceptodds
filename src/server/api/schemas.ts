@@ -1489,3 +1489,37 @@ export const ReadingList = z
 export const ReadingListState = z
   .object({ groupId: Id, listingId: Id, added: z.boolean() })
   .meta({ id: 'ReadingListState' });
+
+export const Announcement = z
+  .object({
+    id: Id,
+    body: z.string().meta({ description: 'Markdown, rendered as a comment is: no raw HTML, http(s) links only.' }),
+    kind: z.string().nullable().meta({ description: 'The venue whose home page shows it; null for every venue.' }),
+    expiresAt: Timestamp.nullable().meta({ description: 'When it stops showing; null for never.' }),
+    signedInOnly: z.boolean().meta({ description: 'Shown only to signed-in readers.' }),
+    createdAt: Timestamp,
+  })
+  .meta({ id: 'Announcement', description: 'A message at the top of the home page.' });
+
+export const AnnouncementList = z
+  .object({ announcements: z.array(Announcement) })
+  .meta({ id: 'AnnouncementList', description: 'What the home page shows now, newest first.' });
+
+export const AnnouncementsQuery = z.object({
+  kind: Kind.optional().meta({ description: 'Only those a venue’s home page shows: its own and every venue’s.' }),
+});
+
+export const PostAnnouncementRequest = z
+  .object({
+    body: z.string().trim().min(1).max(2000),
+    kind: Kind.nullable().optional().meta({
+      description: 'Show it only on this venue’s home page. Left out or null: every venue’s.',
+      example: 'ICLR 2027',
+    }),
+    expiresAt: Timestamp.nullable().optional().meta({ description: 'Stop showing it then. Left out: until deleted.' }),
+    signedInOnly: z
+      .boolean()
+      .default(false)
+      .meta({ description: 'Show it only to signed-in readers. Left out: to everyone.' }),
+  })
+  .meta({ id: 'PostAnnouncementRequest' });

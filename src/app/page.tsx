@@ -14,6 +14,9 @@ import { RememberHomeSearch } from '@/components/HomeLink';
 import { TitleBlock } from '@/components/TitleBlock';
 import { OnboardAgent } from '@/components/OnboardAgent';
 import { InstitutionStrip } from '@/components/InstitutionStrip';
+import { Announcements } from '@/components/Announcements';
+import { currentAnnouncements } from '@/server/announcements';
+import { DISMISSED_COOKIE, parseDismissed } from '@/lib/announcements';
 import { TutorialModal } from '@/components/TutorialModal';
 import { Wordmark } from '@/components/Wordmark';
 import type { z } from 'zod';
@@ -234,7 +237,7 @@ export default async function Home({
   // A search that is only words may be a name: traders above the papers, on
   // the first page.
   const who = peopleText(parsed?.node ?? null);
-  const [all, followed, held, people, busiest, traded, institutions] = await Promise.all([
+  const [all, followed, held, people, busiest, traded, institutions, notes] = await Promise.all([
     pageOf(sp.page, PAGE, {
       ...browse,
       kind: kindFilter,
@@ -254,6 +257,9 @@ export default async function Home({
     me !== null ? hasTraded(me) : false,
     // Signed out, and not searching: where the traders are from.
     viewer === null && !q ? traderInstitutions() : [],
+    // The admin's messages: this venue's and every venue's, or all of them when the list is every venue;
+    // those for signed-in readers only to a signed-in viewer.
+    currentAnnouncements(kind ?? undefined, viewer !== null),
   ]);
   const busiestListing = busiest.rows[0]?.listing;
   const [tutorialExample] = busiestListing
@@ -262,6 +268,9 @@ export default async function Home({
   const cookieJar = await cookies();
   const followingOpen = cookieJar.get(FOLLOWING_COOKIE)?.value !== '0';
   const positionsOpen = cookieJar.get(POSITIONS_COOKIE)?.value !== '0';
+  // Those this browser dismissed are left out here, never hidden after drawing.
+  const dismissed = new Set(parseDismissed(cookieJar.get(DISMISSED_COOKIE)?.value));
+  const announcements = notes.filter((a) => !dismissed.has(a.id));
   const sparks = await sparklines(
     [...all.rows, ...(followed?.rows ?? []), ...(held?.rows ?? [])].flatMap((r) => (r.main ? [r.main] : [])),
   );
@@ -312,6 +321,7 @@ export default async function Home({
       {wanted === undefined && <VenueInUrl kind={kind ?? 'all'} />}
       {/* The logo, from any other page, comes back to this list as it is now. */}
       <RememberHomeSearch />
+      <Announcements items={announcements} />
       <TitleBlock
         title={
           <>

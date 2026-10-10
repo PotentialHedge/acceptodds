@@ -1,5 +1,6 @@
 import { readingList, readingStatuses, setListingRead, setReadingList } from '../reading';
 import { isUniqueViolation } from '@/db/errors';
+import type { Announcement } from '@/db/schema';
 import {
   authenticate,
   requireAuth,
@@ -33,6 +34,7 @@ import {
 } from '../groups';
 import { setRelated, setText, upsertListing } from '../listings';
 import { setMap } from '../map';
+import { currentAnnouncements, deleteAnnouncement as deleteAnnouncementRow, postAnnouncement } from '../announcements';
 import { mapCached } from '../map-cache';
 import { countTransition, countView } from '../view-counter';
 import { publicPosition, publicPositionsOf, publish, unpublish } from '../public-positions';
@@ -357,6 +359,45 @@ export const putMap = route(async (req) => {
   const principal = await requireAuth(req, 'admin');
   const body = await parseBody(req, S.SetMapRequest);
   return respond(S.SetMapResult, { count: await setMap(body) }, { principal });
+});
+
+const presentAnnouncement = (a: Announcement) => ({
+  id: a.id,
+  body: a.body,
+  kind: a.kind,
+  expiresAt: toIsoOrNull(a.expiresAt),
+  signedInOnly: a.signedInOnly,
+  createdAt: toIso(a.createdAt),
+});
+
+/** The messages the home page shows now, to this caller: those for signed-in readers only with a credential. Public. */
+export const getAnnouncements = route(async (req) => {
+  const principal = await authenticate(req);
+  const { kind } = parseQuery(req, S.AnnouncementsQuery);
+  const rows = await currentAnnouncements(kind, principal !== null);
+  return respond(S.AnnouncementList, { announcements: rows.map(presentAnnouncement) }, { principal });
+});
+
+/** Put a message at the top of the home page. */
+export const postAnnouncements = route(async (req) => {
+  const principal = await requireAuth(req, 'admin');
+  const body = await parseBody(req, S.PostAnnouncementRequest);
+  const row = await postAnnouncement({
+    body: body.body,
+    kind: body.kind,
+    expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
+    signedInOnly: body.signedInOnly,
+  });
+  events.log('announcement.posted', { accountId: principal.account.id });
+  return respond(S.Announcement, presentAnnouncement(row), { principal, status: 201 });
+});
+
+export const deleteAnnouncement = route(async (req, params) => {
+  const principal = await requireAuth(req, 'admin');
+  const id = parseParam(params.id, S.Id, 'id');
+  if (!(await deleteAnnouncementRow(id))) throw new ApiError(404, 'not_found', `no announcement ${id}`);
+  events.log('announcement.deleted', { accountId: principal.account.id });
+  return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
 });
 
 export const getLeaderboard = route(async (req) => {

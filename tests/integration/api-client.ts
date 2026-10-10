@@ -36,6 +36,8 @@ import * as mapRoute from '@/app/api/v1/map/route';
 import * as mapSearchRoute from '@/app/api/v1/map/search/route';
 import * as mapRelatedRoute from '@/app/api/v1/map/related/route';
 import * as mapTitlesRoute from '@/app/api/v1/map/titles/route';
+import * as announcementsRoute from '@/app/api/v1/announcements/route';
+import * as announcementRoute from '@/app/api/v1/announcements/[id]/route';
 import * as transitionsRoute from '@/app/api/v1/transitions/route';
 import * as versionRoute from '@/app/api/v1/version/route';
 import * as myFollowsRoute from '@/app/api/v1/me/follows/route';
@@ -105,6 +107,8 @@ const ROUTES: [pattern: string, mod: Mod][] = [
   ['/map/search', mapSearchRoute],
   ['/map/related', mapRelatedRoute],
   ['/map/titles', mapTitlesRoute],
+  ['/announcements', announcementsRoute],
+  ['/announcements/[id]', announcementRoute],
   ['/transitions', transitionsRoute],
   ['/version', versionRoute],
   ['/leaderboard', leaderboardRoute],

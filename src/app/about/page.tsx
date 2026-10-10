@@ -1,15 +1,23 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import type { z } from 'zod';
 import { EqRef, Equation } from '@/components/Equation';
 import { MathText } from '@/components/MathText';
 import { Authors } from '@/components/Authors';
 import { Cite, References } from '@/components/References';
 import { TitleBlock } from '@/components/TitleBlock';
+import { TutorialModal } from '@/components/TutorialModal';
 import { ui } from '@/components/ui';
 import { REPO_URL } from '@/lib/links';
 import { Wordmark } from '@/components/Wordmark';
 import { rep, REP } from '@/lib/format';
 import { startingBalanceMicro } from '@/server/accounts';
+import type * as S from '@/server/api/schemas';
+import { presentListing } from '@/server/api/present';
+import { viewerFromHeaders } from '@/server/auth';
+import { currentVenue } from '@/server/current-venue';
+import { browseListings, listingViews } from '@/server/views';
 import { venues } from '@/venues';
 
 // The starting balance is read from the environment at request time.
@@ -39,8 +47,18 @@ const prose = 'mt-2 space-y-3 leading-relaxed';
  * Cross-references to sections ("§5") are written by hand, like the
  * equation and reference numbers: reorder the sections, fix them.
  */
-export default function AboutPage() {
+export default async function AboutPage() {
   const start = `${rep(startingBalanceMicro(), 0)} ${REP}`;
+  // Signed out, the home page's tutorial, on the same example: the navbar venue's most traded open paper.
+  const viewer = await viewerFromHeaders(await headers());
+  const busiest =
+    viewer === null
+      ? (await browseListings({ kind: await currentVenue(), status: 'open', sort: 'volume', traded: true, limit: 1 }))
+          .rows[0]?.listing
+      : undefined;
+  const [tutorialExample] = busiest
+    ? ((await listingViews([busiest])).map(presentListing) as z.output<typeof S.Listing>[])
+    : [];
   return (
     <main className={`${ui.page} max-w-160`}>
       <TitleBlock
@@ -73,6 +91,15 @@ export default function AboutPage() {
             [Wasserman Paper]
           </a>
         </div> */}
+        {viewer === null && (
+          <div className="mt-4 flex flex-wrap items-baseline justify-center gap-x-6">
+            <TutorialModal
+              example={tutorialExample}
+              startingBalanceMicro={startingBalanceMicro().toString()}
+              signedIn={false}
+            />
+          </div>
+        )}
       </TitleBlock>
 
       <h2 id="why" className={ui.groupHeading}>

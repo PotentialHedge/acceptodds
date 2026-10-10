@@ -1105,7 +1105,50 @@ export function buildRegistry(): OpenAPIRegistry {
     }),
   );
 
+  r.registerPath(
+    op({
+      method: 'get',
+      path: '/announcements',
+      tags: ['meta'],
+      summary: 'Messages on the home page',
+      description:
+        'What the home page shows at its top now, newest first: unexpired, for the venue or every venue, and those for signed-in readers only when a credential is sent.',
+      request: { query: S.AnnouncementsQuery },
+      ok: { status: 200, schema: S.AnnouncementList, description: 'The messages.' },
+    }),
+  );
+
   // -- admin ----------------------------------------------------------------
+
+  r.registerPath(
+    op({
+      method: 'post',
+      path: '/announcements',
+      tags: ['admin'],
+      summary: 'Put a message on the home page',
+      description:
+        'Markdown, shown at the top of one venue’s home page (`kind`) or every venue’s, until `expiresAt` or until deleted, and only to signed-in readers with `signedInOnly`. Readers can dismiss it in their browser.',
+      scope: 'admin',
+      request: { body: { content: { 'application/json': { schema: S.PostAnnouncementRequest } } } },
+      ok: { status: 201, schema: S.Announcement, description: 'Posted.' },
+    }),
+  );
+
+  r.registerPath(
+    noContent(
+      {
+        method: 'delete',
+        path: '/announcements/{id}',
+        tags: ['admin'],
+        summary: 'Take a message off the home page',
+        scope: 'admin',
+        request: { params: z.object({ id: S.Id }) },
+        ok: { status: 200, schema: S.Announcement, description: 'unused' },
+        errors: { 404: 'not_found' },
+      },
+      'Deleted.',
+    ),
+  );
 
   r.registerPath(
     op({

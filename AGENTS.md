@@ -905,6 +905,20 @@ value`, the exit quote against the basis as % or `REP` (toggled in the
   any other page links back to it. On the home page itself the logo is
   the plain `/`, which clears it.
 
+### Announcements
+
+- **An admin's messages sit at the top of the home page** (`POST
+/announcements`, `admin`; `DELETE /announcements/{id}`; public `GET
+/announcements?kind=`), written only by `server/announcements.ts`.
+  Markdown, rendered by `components/Markdown` like a comment; for one venue
+  (`kind`) or, null, every venue; shown until `expiresAt` or deleted, and
+  with `signedInOnly` to signed-in readers only (the `GET` to a caller with
+  a credential). On the
+  server, so readers without JavaScript see them; a reader's × hides one in
+  that browser only, in the `announcements_dismissed` cookie (by id,
+  `lib/announcements.ts`), which the page reads so a dismissed one is never
+  drawn. No admin UI, as elsewhere.
+
 ### Public positions (#36)
 
 - **A trader may make a position public, one at a time, and nothing else
