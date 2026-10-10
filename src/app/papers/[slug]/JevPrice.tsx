@@ -42,6 +42,7 @@ export function JevPrice({
   slug,
   kind,
   outcomes,
+  byJev,
   viewer,
   asked,
 }: {
@@ -51,6 +52,8 @@ export function JevPrice({
   kind: string | null;
   /** The labels the market will open with, best first (its template's). */
   outcomes: readonly string[];
+  /** The market opens at JEV's price; else at the venue's own prior (`JEV_OPENING=off`), and JEV goes unnamed. */
+  byJev: boolean;
   viewer: { signedIn: boolean; canTrade: boolean };
   /** `?price=jev`: asked for before signing in. */
   asked: boolean;
@@ -196,7 +199,7 @@ export function JevPrice({
         {/* Positioned, so it paints over the figure: the blur's filter lifts the figure above unpositioned content. */}
         <div className="relative flex w-full justify-center">{over}</div>
       </div>
-      {!signingUp && (
+      {!signingUp && byJev && (
         <p className={ui.fine}>Open the market to see its starting price (determined by @TypeSafeAI/JEV).</p>
       )}
       {viewer.signedIn && !viewer.canTrade && <div className={ui.note(false)}>{MESSAGES.not_verified}</div>}
