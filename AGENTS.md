@@ -1420,6 +1420,10 @@ unpaginated, and 5 s for that search.
   call, as fairer for now): no model call, every market opens at its
   venue's `openingPrice`s (ICLR: 32% accept). Unset or anything else asks
   JEV. The price stays hidden until the first trade either way.
+  **`OPENING_PRIOR_<VENUE SLUG>`** (`OPENING_PRIOR_ICLR2027=0.30`) overrides a
+  two-outcome venue's prior, as its headline, for the fallback, `JEV_OPENING=off`
+  and the venue's home card (`market-templates.openingPrices`); between
+  `PRICE_FLOOR` and `1 − PRICE_FLOOR`, else it throws.
 - **JEV reads the full text when `../research` supplied one**
   (`PUT /listings/{id}/text`, admin, its own call like related papers, so
   re-posting a listing keeps it; `listing_texts`, written by

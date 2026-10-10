@@ -1,8 +1,8 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { headlineLabel, MAX_BAR_OUTCOMES, paletteSlot, shareTitleLine } from '@/lib/headline';
-import { marketTemplate, openMarketTemplate } from '@/server/market-templates';
+import { marketTemplate, openingPriorVar, openingPrices, openMarketTemplate } from '@/server/market-templates';
 import { COLOR_SLOT, runningHead, shareSuffix, venue, venueBySlug, venues, venueSlug } from '@/venues';
 
 describe('venues', () => {
@@ -66,6 +66,30 @@ describe('venues', () => {
     expect(t?.jev).toBeNull();
     expect(t?.opensWithListing).toBe(true);
     expect(marketTemplate('ICLR 2027')?.opensWithListing).toBe(false);
+  });
+});
+
+describe('opening prior from the env', () => {
+  afterEach(() => vi.unstubAllEnvs());
+  const iclr = venue('ICLR 2027')!;
+
+  it('is named after the venue’s short path', () => {
+    expect(openingPriorVar(iclr)).toBe('OPENING_PRIOR_ICLR2027');
+  });
+
+  it('defaults to the venue’s own prices, and sets the headline when given', () => {
+    vi.stubEnv('OPENING_PRIOR_ICLR2027', undefined);
+    expect(openingPrices(iclr)).toEqual([0.32, 0.68]);
+    expect(marketTemplate('ICLR 2027')?.fallbackPrices).toEqual([0.32, 0.68]);
+    vi.stubEnv('OPENING_PRIOR_ICLR2027', ' 0.25 ');
+    expect(openingPrices(iclr)).toEqual([0.25, 0.75]);
+    expect(marketTemplate('ICLR 2027')?.fallbackPrices).toEqual([0.25, 0.75]);
+    expect(openingPrices(venue('OpenAI Math')!)).toEqual([0.5, 0.5]);
+  });
+
+  it.each(['25', 'abc', '0.01', '0.99', '-0.3'])('refuses %s', (value) => {
+    vi.stubEnv('OPENING_PRIOR_ICLR2027', value);
+    expect(() => openingPrices(iclr)).toThrow('OPENING_PRIOR_ICLR2027');
   });
 });
 
