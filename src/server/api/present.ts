@@ -64,6 +64,7 @@ export function presentListing(v: ListingView): z.input<typeof S.Listing> {
     primaryArea: l.primaryArea,
     links: l.links.map((k) => ({ label: k.label, url: k.url })),
     kind: l.kind,
+    closedAt: toIsoOrNull(l.closedAt),
     createdAt: toIso(l.createdAt),
     followers: v.followers,
     views: l.viewCount,

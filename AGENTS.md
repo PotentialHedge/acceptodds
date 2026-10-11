@@ -1374,6 +1374,17 @@ unpaginated, and 5 s for that search.
   - `POST /listings/{id}/orders { outcome, stakeMicro }` (`buyOnListing`,
     `Idempotency-Key`) is a buy by stake on the main market, opening it
     first if there is none. For bots; the UI does not use it.
+- **A closed listing opens no market** (`listings.closed_at`,
+  `refuseClosed` in `market-start.ts`): either call is `409 listing_closed`,
+  before any budget, subsidy or model call, and `createFromTemplate` reads
+  the flag again from the database just before it makes one. Set and
+  cleared only by `listings.setClosed`, through `PUT`/`DELETE
+/listings/{id}/closed` (`admin`), its own call so re-posting a listing
+  keeps it. Opaque: `../research` closes a paper that was withdrawn or
+  desk-rejected (`scraper/withdrawals.py`), since a market opened then is a
+  bet on a known outcome. It touches no market: that watcher closes the
+  existing one (`POST /markets/{id}/close`) at once and settles it later.
+  The paper page drops "Open Market" and `/welcome`'s search skips it.
 - **Bots never open a market** (`refuseBot` in `market-start.ts`): either
   call on a listing with no market is `403 bots_cannot_open_markets` for an
   `is_bot` account, before any budget, subsidy or model call is spent. Which

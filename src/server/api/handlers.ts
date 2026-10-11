@@ -31,7 +31,7 @@ import {
   rotateInvite,
   updateGroup,
 } from '../groups';
-import { setRelated, setText, upsertListing } from '../listings';
+import { setClosed, setRelated, setText, upsertListing } from '../listings';
 import { setMap } from '../map';
 import { mapCached } from '../map-cache';
 import { countTransition, countView } from '../view-counter';
@@ -270,6 +270,20 @@ export const putListingText = route(async (req, params) => {
   const chars = await setText(listing, body.text, body.source ?? null);
   return respond(S.SetTextResult, { listingId: listing.id, chars }, { principal });
 });
+
+/**
+ * Close a listing to new markets (`PUT`), or open it again (`DELETE`).
+ * Idempotent. Its markets are left alone: closing those is `POST /markets/{id}/close`.
+ */
+export const putListingClosed = route(async (req, params) => setListingClosed(req, params.id, true));
+export const deleteListingClosed = route(async (req, params) => setListingClosed(req, params.id, false));
+
+async function setListingClosed(req: Request, id: string | string[] | undefined, closed: boolean) {
+  const principal = await requireAuth(req, 'admin');
+  const listing = await resolveListing(parseParam(id, S.ListingRef, 'id'));
+  const closedAt = await setClosed(listing, closed);
+  return respond(S.SetClosedResult, { listingId: listing.id, closedAt: toIsoOrNull(closedAt) }, { principal });
+}
 
 /** Replace a listing's related list. Written by `listings.ts`; not market state. */
 export const putListingRelated = route(async (req, params) => {

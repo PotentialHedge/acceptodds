@@ -124,6 +124,25 @@ export async function setText(
 }
 
 /**
+ * Close a listing to new markets, or open it again. Closing keeps the time
+ * it was first closed; it leaves the listing's markets alone (closing those is
+ * the engine's, `POST /markets/{id}/close`). One statement, never the engine.
+ */
+export async function setClosed(
+  listing: Pick<Listing, 'id'>,
+  closed: boolean,
+  database: Database = getDb(),
+): Promise<Date | null> {
+  const [row] = await database
+    .update(listings)
+    .set({ closedAt: closed ? sql`coalesce(${listings.closedAt}, now())` : null })
+    .where(eq(listings.id, listing.id))
+    .returning({ closedAt: listings.closedAt });
+  invalidateBrowseReads();
+  return row?.closedAt ?? null;
+}
+
+/**
  * Replace a listing's related listings with this list, in order (best first).
  * Whole-list replacement, like the bibliography, but a call of its own: the
  * similarity service writes this, `../research` writes the listing. A listing

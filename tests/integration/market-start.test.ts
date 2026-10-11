@@ -325,6 +325,49 @@ describe('opening a market at JEV’s price, without a trade', () => {
     expect((filled.body as any).marketCreated).toBe(false);
   });
 
+  it('never opens one on a closed listing, either way, until it is opened again', async () => {
+    const calls = stubJev({ probabilities: { Accept: 0.5, Reject: 0.5 } });
+    const p = await paper('p');
+    const admin = await trader('admin', ['admin']);
+    const t = await trader('t');
+    const close = (method: 'PUT' | 'DELETE', token = admin.token) =>
+      api(method, `/listings/${p.slug}/closed`, { token });
+
+    expect((await close('PUT', t.token)).status).toBe(403);
+    const closed = await close('PUT');
+    expect(closed.status).toBe(200);
+    const closedAt = (closed.body as any).closedAt;
+    expect(closedAt).toEqual(expect.any(String));
+    // Idempotent, keeping the first time; and re-posting the listing keeps it.
+    expect((await close('PUT')).body).toEqual({ listingId: p.id, closedAt });
+    await paper('p');
+    expect((await api('GET', `/listings/${p.id}`)).body).toMatchObject({ closedAt });
+
+    for (const res of [
+      await open(t.token, p.id),
+      await open(undefined, p.id),
+      await order(t.token, p.id, 'Reject', '1000000'),
+    ]) {
+      expect(res.status).toBe(409);
+      expect((res.body as any).error.code).toBe('listing_closed');
+    }
+    expect(await mainMarketOf(p.id)).toHaveLength(0);
+    expect(calls).toHaveLength(0);
+
+    expect((await close('DELETE')).body).toEqual({ listingId: p.id, closedAt: null });
+    expect((await open(t.token, p.id)).status).toBe(201);
+  });
+
+  it('leaves a closed listing’s existing market trading: closing that is the engine’s', async () => {
+    const p = await paper('p');
+    const t = await trader('t');
+    expect((await open(t.token, p.id)).status).toBe(201);
+    const admin = await trader('admin', ['admin']);
+    expect((await api('PUT', `/listings/${p.id}/closed`, { token: admin.token })).status).toBe(200);
+    expect((await open(t.token, p.id)).status).toBe(200);
+    expect((await order(t.token, p.id, 'Reject', '1000000')).status).toBe(201);
+  });
+
   it('opens it for a visitor with no credential, made by nobody, from the visitors’ shared budget', async () => {
     stubJev({ probabilities: { Accept: 0.3, Reject: 0.7 } });
     const [a, b] = await Promise.all([paper('a'), paper('b')]);

@@ -1,7 +1,7 @@
 import { and, asc, eq } from 'drizzle-orm';
 import { getDb, type Database } from '@/db';
 import { isUniqueViolation } from '@/db/errors';
-import { accounts, markets, outcomes, type Account, type Listing, type Market } from '@/db/schema';
+import { accounts, listings, markets, outcomes, type Account, type Listing, type Market } from '@/db/schema';
 import { sharesForCost } from '@/lib/lmsr';
 import { cashIn, startingBalanceMicro } from './wallets';
 import { ApiError } from './api/errors';
@@ -57,6 +57,7 @@ export async function buyOnListing(
     const [account] = await database.select().from(accounts).where(eq(accounts.id, accountId));
     if (!account) throw new EngineError('not_found', `no account ${accountId}`);
     refuseBot(account);
+    refuseClosed(listing);
     // What the account has in the venue the market will open in: its wallet
     // there, or the grant its first trade there opens one with.
     const cashMicro = listing.kind ? await cashIn(accountId, listing.kind, database) : startingBalanceMicro();
@@ -134,6 +135,7 @@ export async function openListingMarket(
     const [account] = await database.select().from(accounts).where(eq(accounts.id, accountId));
     if (account) refuseBot(account);
   }
+  refuseClosed(listing);
   await spendOpenBudget(accountId);
   const opened = await ensureMainMarket(listing, accountId, database);
   // Whoever opens a paper's market follows it. Only the call that made it, so
@@ -155,6 +157,19 @@ export async function openListingMarket(
 function refuseBot(account: Account): void {
   if (account.isBot) {
     throw new ApiError(403, 'bots_cannot_open_markets', 'bots trade only on markets that are already open');
+  }
+}
+
+/**
+ * A closed listing (`listings.closed_at`) opens no market: its creating
+ * client has said there is nothing left to forecast (for a paper, it was
+ * withdrawn), and a market opened then would be a bet on a known outcome.
+ * Checked before any budget, subsidy or model call is spent, and again from
+ * the database just before a market is made.
+ */
+function refuseClosed(listing: Pick<Listing, 'slug' | 'closedAt'>): void {
+  if (listing.closedAt) {
+    throw new ApiError(409, 'listing_closed', `listing ${listing.slug} is closed: no market opens on it`);
   }
 }
 
@@ -256,6 +271,12 @@ async function createFromTemplate(
   if (template.closesAt.getTime() <= Date.now()) {
     throw new EngineError('market_closed', `markets for ${listing.kind} closed at ${template.closesAt.toISOString()}`);
   }
+  // Read again: the listing a caller holds may predate its closing.
+  const [current] = await database
+    .select({ slug: listings.slug, closedAt: listings.closedAt })
+    .from(listings)
+    .where(eq(listings.id, listing.id));
+  refuseClosed(current ?? listing);
   // A venue that asks JEV nothing, or JEV switched off (`JEV_OPENING=off`), opens at its own prices, with no
   // model call.
   const openingPrices =

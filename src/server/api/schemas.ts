@@ -180,6 +180,10 @@ const ListingFields = {
   primaryArea: z.string().nullable().meta({ description: 'Opaque.' }),
   links: z.array(ListingLink),
   kind: z.string().nullable().meta({ description: 'Opaque to the venue; whatever the creating client groups by.' }),
+  closedAt: Timestamp.nullable().meta({
+    description:
+      'When the creating client closed it (`PUT /listings/{id}/closed`), else `null`. No new market opens on a closed listing; its existing markets are unaffected.',
+  }),
   createdAt: Timestamp,
 };
 
@@ -1192,6 +1196,13 @@ export const SetTextRequest = z
     }),
   })
   .meta({ id: 'SetTextRequest' });
+
+export const SetClosedResult = z
+  .object({
+    listingId: Id,
+    closedAt: Timestamp.nullable().meta({ description: 'When it was first closed; `null` once opened again.' }),
+  })
+  .meta({ id: 'SetClosedResult' });
 
 export const SetTextResult = z.object({ listingId: Id, chars: z.number().int().min(0) }).meta({ id: 'SetTextResult' });
 

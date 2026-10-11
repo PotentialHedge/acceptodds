@@ -128,8 +128,8 @@ export default async function PaperPage({
     ? await Promise.all([groupsOf(viewer.account.id), readingGroupIdsForListing(viewer.account.id, listing.id)])
     : [[], new Set<string>()];
   const [readStatus] = await readingStatuses([listing.id], viewer?.account.id ?? null);
-  // A paper with no market yet can be traded while its kind's markets are open.
-  const opening = markets.length === 0 ? openMarketTemplate(listing.kind) : null;
+  // A paper with no market yet can be traded while its kind's markets are open, unless it is closed.
+  const opening = markets.length === 0 && !listing.closedAt ? openMarketTemplate(listing.kind) : null;
   // Nobody has bet on it, and someone could: the related papers held back say where to.
   const main = markets[0];
   const unbet =
@@ -228,7 +228,9 @@ export default async function PaperPage({
             />
           </section>
         ) : (
-          <div className={ui.empty}>No markets on this paper yet.</div>
+          <div className={ui.empty}>
+            {listing.closedAt ? 'No market will open on this paper.' : 'No markets on this paper yet.'}
+          </div>
         ))}
       {/* One market per paper is the default; the list is only for a paper with more. */}
       {markets.length > 1 && (

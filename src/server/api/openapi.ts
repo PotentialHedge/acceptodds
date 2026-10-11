@@ -255,6 +255,25 @@ export function buildRegistry(): OpenAPIRegistry {
     }),
   );
 
+  for (const method of ['put', 'delete'] as const) {
+    r.registerPath(
+      op({
+        method,
+        path: '/listings/{id}/closed',
+        tags: ['listings'],
+        summary: method === 'put' ? 'Close a listing to new markets' : 'Open a closed listing again',
+        description:
+          method === 'put'
+            ? 'No new market opens on a closed listing: opening one, by `POST /listings/{id}/market` or a first order, is `409 listing_closed`. Its existing markets are unaffected; close those with `POST /markets/{id}/close`. Idempotent, and keeps the time it was first closed. Its own call, so re-posting the listing keeps it.'
+            : 'Markets may be opened on it again. Idempotent.',
+        scope: 'admin',
+        request: { params: z.object({ id: S.ListingRef }) },
+        ok: { status: 200, schema: S.SetClosedResult, description: 'When it was closed, or null.' },
+        errors: { 404: 'not_found' },
+      }),
+    );
+  }
+
   r.registerPath(
     op({
       method: 'put',
@@ -833,7 +852,7 @@ export function buildRegistry(): OpenAPIRegistry {
         401: 'unauthorized: a credential was sent and is invalid.',
         403: 'forbidden: the credential lacks the "trade" scope | not_verified: the account has no confirmed institutional email address.',
         404: 'not_found',
-        409: 'market_not_open: no market is made for this listing’s kind | market_closed',
+        409: 'market_not_open: no market is made for this listing’s kind | market_closed | listing_closed: the listing has no market and is closed to new ones',
         429: 'rate_limited: too many markets opened in the last hour',
       },
     }),
@@ -861,7 +880,7 @@ export function buildRegistry(): OpenAPIRegistry {
       errors: {
         403: 'forbidden: the credential lacks the "trade" scope | not_verified: the account has no confirmed institutional email address.',
         404: 'not_found: no such listing or outcome.',
-        409: 'insufficient_balance | market_not_open: no market is made for this listing’s kind | market_closed | idempotency_key_reused',
+        409: 'insufficient_balance | market_not_open: no market is made for this listing’s kind | market_closed | listing_closed: the listing has no market and is closed to new ones | idempotency_key_reused',
         429: 'rate_limited: this order would open a market, and too many were opened in the last hour',
       },
     }),

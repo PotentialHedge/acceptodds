@@ -40,6 +40,7 @@ export const API_ERROR_CODES = [
   'too_many_groups',
   'group_admin',
   'bots_cannot_open_markets',
+  'listing_closed',
   'method_not_allowed',
   'internal_error',
 ] as const;

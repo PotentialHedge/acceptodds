@@ -194,6 +194,15 @@ export const listings = pgTable(
     kind: text('kind'),
     /** Cache of the unique viewers per day, summed (`listing_views`). Written only by `server/view-counter.ts`. */
     viewCount: integer('view_count').notNull().default(0),
+    /**
+     * When the creating client closed it: no new market opens on a closed
+     * listing (`market-start.ts`), by either call. Markets it already has are
+     * untouched — closing one is the engine's. Set only by `listings.setClosed`
+     * (`PUT`/`DELETE /listings/{id}/closed`), never by the upsert, so re-posting
+     * a listing keeps it. Opaque, like everything here: `../research` closes a
+     * paper that was withdrawn.
+     */
+    closedAt: timestamp('closed_at', { withTimezone: true, mode: 'date' }),
     createdAt: createdAt(),
   },
   (t) => [

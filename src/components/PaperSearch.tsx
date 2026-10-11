@@ -63,7 +63,7 @@ export function PaperSearch({
     publicJson,
   );
   const shown = (debounced ? (data?.listings ?? []) : suggestions).filter(
-    (l) => tradableListingMarket(l) || (canOpen && l.markets.length === 0),
+    (l) => tradableListingMarket(l) || (canOpen && l.markets.length === 0 && l.closedAt === null),
   );
 
   return (
