@@ -28,6 +28,7 @@ import { viewerFromHeaders } from '@/server/auth';
 import { currentVenue } from '@/server/current-venue';
 import * as events from '@/server/events';
 import { followedListingIds } from '@/server/follows';
+import { jevOpeningEnabled } from '@/server/jev';
 import { openMarketTemplate } from '@/server/market-templates';
 import { runningHead, venue } from '@/venues';
 import { shareSubject, siteName, siteUrl } from '@/server/share';
@@ -218,6 +219,7 @@ export default async function PaperPage({
               slug={listing.slug}
               kind={listing.kind}
               outcomes={opening.outcomes}
+              byJev={opening.jev !== null && jevOpeningEnabled()}
               asked={(Array.isArray(sp[JEV_PRICE_PARAM]) ? sp[JEV_PRICE_PARAM][0] : sp[JEV_PRICE_PARAM]) === 'jev'}
               viewer={{
                 signedIn: viewer !== null,

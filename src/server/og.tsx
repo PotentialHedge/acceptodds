@@ -8,6 +8,7 @@ import { standingBand } from '@/lib/leaderboard';
 import { microToFloat } from '@/lib/money';
 import type { FieldSnapshot } from './field-snapshot';
 import type { ShareSubject } from './share';
+import { openingPrices } from './market-templates';
 import type { Venue } from '@/venues';
 
 /**
@@ -245,11 +246,12 @@ function CardNote({ note, left, top }: { note: string; left: number; top: number
  * The home page's link preview, and every page's without one of its own:
  * what the site asks of the venue (`venues/`), and a paper's market with the
  * paper hidden, at the prior every one of the venue's markets falls back to
- * (its outcomes' `openingPrice`) — a real price, not one made up for the
+ * (`openingPrices`: its outcomes' `openingPrice`, or the env's prior) — a real price, not one made up for the
  * picture.
  */
 export async function homeImage(v: Venue): Promise<ImageResponse> {
-  const prior = v.market.outcomes.map((o) => ({ label: o.label, price: o.openingPrice }));
+  const fallback = openingPrices(v);
+  const prior = v.market.outcomes.map((o, i) => ({ label: o.label, price: fallback[i] }));
   const legend = prior.length >= 2 && prior.length <= MAX_BAR_OUTCOMES ? barLegend(prior) : null;
   return card(
     v.kind,

@@ -156,6 +156,15 @@ export function ranked(
 }
 
 /**
+ * Whether markets open at JEV's price at all. `JEV_OPENING=off` (or `0`, `false`) opens every market at its
+ * venue's own prior (`fallbackPrices`, e.g. ICLR's 32%), with no model call; anything else, or unset, asks JEV.
+ */
+export function jevOpeningEnabled(): boolean {
+  const value = process.env.JEV_OPENING?.trim().toLowerCase();
+  return !(value === 'off' || value === '0' || value === 'false');
+}
+
+/**
  * Desired mean headline for JEV seeds, independently of the venue's fallback/base rate.
  * Decimal probability (0.28 = 28%). Reject invalid settings through jevPrices' fallback path.
  */

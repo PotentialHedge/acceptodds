@@ -824,9 +824,9 @@ export function buildRegistry(): OpenAPIRegistry {
       method: 'post',
       path: '/listings/{id}/market',
       tags: ['trading'],
-      summary: 'Open a listing’s market at a model’s prices, without trading',
+      summary: 'Open a listing’s market, without trading',
       description:
-        'A listing has no market until someone opens it, by this call or by a first order (`POST /listings/{id}/orders`). The market opens at JEV’s prices for the listing, else the venue’s base rate. Idempotent: on a listing with a market, that market and `created: false`. Each account may open 20 an hour, counting markets opened by a first order. Without a credential it opens too, for a visitor choosing a first bet before signing up, from one budget all visitors share; a credential that is sent needs the `trade` scope and a trading-eligible account.',
+        'A listing has no market until someone opens it, by this call or by a first order (`POST /listings/{id}/orders`). The market opens at JEV’s prices for the listing when JEV is enabled, else at the venue’s base rate. Idempotent: on a listing with a market, that market and `created: false`. Each account may open 20 an hour, counting markets opened by a first order. Without a credential it opens too, for a visitor choosing a first bet before signing up, from one budget all visitors share; a credential that is sent needs the `trade` scope and a trading-eligible account.',
       request: { params: listingIdParam },
       ok: { status: 201, schema: S.OpenedMarket, description: 'The market (200 when it already existed).' },
       errors: {
@@ -846,7 +846,7 @@ export function buildRegistry(): OpenAPIRegistry {
       tags: ['trading'],
       summary: 'Buy on a listing by stake, making its market on the first trade',
       description:
-        'A listing has no market until its first trade: this order makes it (opening at a model’s prior, else the venue’s base rate) and then fills. On a listing that has a market, it buys on the main market. By stake, not shares: the stake is the bound, and buys what it pays for when the order arrives. Send an `Idempotency-Key` header and retry freely.',
+        'A listing has no market until its first trade: this order makes it (opening at JEV’s prices when enabled, else the venue’s base rate) and then fills. On a listing that has a market, it buys on the main market. By stake, not shares: the stake is the bound, and buys what it pays for when the order arrives. Send an `Idempotency-Key` header and retry freely.',
       scope: 'trade',
       request: {
         params: listingIdParam,

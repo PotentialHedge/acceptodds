@@ -8,7 +8,7 @@ import { ApiError } from './api/errors';
 import * as engine from './engine';
 import { EngineError } from './errors';
 import * as follows from './follows';
-import { jevPrices } from './jev';
+import { jevOpeningEnabled, jevPrices } from './jev';
 import { marketTemplate, openMarketTemplate } from './market-templates';
 import { consume, rateLimitHeaders, type RateLimitConfig } from './ratelimit';
 
@@ -256,10 +256,12 @@ async function createFromTemplate(
   if (template.closesAt.getTime() <= Date.now()) {
     throw new EngineError('market_closed', `markets for ${listing.kind} closed at ${template.closesAt.toISOString()}`);
   }
-  // A venue that asks JEV nothing opens at its own prices, with no model call.
+  // A venue that asks JEV nothing, or JEV switched off (`JEV_OPENING=off`), opens at its own prices, with no
+  // model call.
   const openingPrices =
-    (template.jev ? await jevPrices(listing, { ...template, jev: template.jev }, database) : null) ??
-    template.fallbackPrices;
+    (template.jev && jevOpeningEnabled()
+      ? await jevPrices(listing, { ...template, jev: template.jev }, database)
+      : null) ?? template.fallbackPrices;
   try {
     const { marketId } = await engine.createMarket(
       {
