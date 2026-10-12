@@ -54,7 +54,9 @@ export default function PrivacyPage() {
             to sign you in and to check that you may trade;
           </li>
           <li>your display name, your handle and, if you set one, a hash of your password (never the password);</li>
-          <li>sign-in sessions, and a hash of each API key you create;</li>
+          <li>
+            sign-in sessions (not the network address or browser they came from), and a hash of each API key you create;
+          </li>
           <li>
             your trades, positions and $rep balance, the comments you post and the papers you follow, group, back or
             mark as read — the site itself.

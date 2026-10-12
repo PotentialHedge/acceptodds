@@ -222,9 +222,9 @@ export function authPathOf(link: URL): string {
 export async function authCall(
   method: string,
   path: string,
-  opts: { body?: unknown; cookie?: string } = {},
+  opts: { body?: unknown; cookie?: string; headers?: Record<string, string> } = {},
 ): Promise<Response> {
-  const headers: Record<string, string> = { origin: ORIGIN };
+  const headers: Record<string, string> = { ...opts.headers, origin: ORIGIN };
   if (opts.cookie) headers.cookie = opts.cookie;
   if (opts.body !== undefined) headers['content-type'] = 'application/json';
   const req = new Request(new URL(`/api/auth${path}`, ORIGIN), {

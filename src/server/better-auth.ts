@@ -282,6 +282,15 @@ export function createAuth(database: Database) {
           },
         },
       },
+      session: {
+        create: {
+          // Better Auth stores each session's IP address and user agent, for a
+          // device list we don't have. Store neither: nothing reads them, and a
+          // network address per sign-in is personal data kept for no purpose.
+          // (`disableIpTracking` would also blind the sign-in rate limiter.)
+          before: async () => ({ data: { ipAddress: null, userAgent: null } }),
+        },
+      },
     },
 
     // Sign-up is ours (`server/onboarding.ts`): it takes no password, so

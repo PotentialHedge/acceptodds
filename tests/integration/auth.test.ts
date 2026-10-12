@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
 import { getDb } from '@/db';
-import { account as authAccount, user } from '@/db/auth-schema';
+import { account as authAccount, session, user } from '@/db/auth-schema';
 import { accounts, ledgerEntries, orders } from '@/db/schema';
 import { ensureAccountForUser } from '@/server/accounts';
 import { walletsOf } from '@/server/wallets';
@@ -274,6 +274,20 @@ describe('confirming with the code from the mail', () => {
 
     // The code is spent; the link still confirms, and grants nothing more.
     expect((await confirmWithCode('code@example.org', code)).status).toBe(400);
+  });
+
+  it('stores no IP address or user agent on the session', async () => {
+    await signUpUnconfirmed('private@example.org');
+    const code = codeFrom(devOutbox().find((m) => m.to === 'private@example.org')!.text);
+    const res = await authCall('POST', '/email-otp/verify-email', {
+      body: { email: 'private@example.org', otp: code },
+      headers: { 'cf-connecting-ip': '203.0.113.7', 'user-agent': 'Mozilla/5.0 (Test)' },
+    });
+    expect(res.status).toBe(200);
+    const [u] = await db.select().from(user).where(eq(user.email, 'private@example.org'));
+    const rows = await db.select().from(session).where(eq(session.userId, u.id));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ ipAddress: null, userAgent: null });
   });
 
   it('refuses a wrong code, and grants nothing', async () => {
