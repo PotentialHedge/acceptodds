@@ -5,7 +5,7 @@ import { presentComments, presentMarket, presentPortfolio, presentTapeEntry } fr
 import type * as S from '@/server/api/schemas';
 import { listComments } from '@/server/comments';
 import * as events from '@/server/events';
-import { venueField } from '@/server/venue-field';
+import { peerField, venueField } from '@/server/venue-field';
 import { marketTape, marketView, priceHistory } from '@/server/views';
 import type { Initial } from './MarketLive';
 import { COMMENT_PAGE } from './comment-page';
@@ -20,13 +20,14 @@ import { TAPE_LIMIT } from './tape';
  * polling with the initial data as its fallback.
  */
 export async function loadMarketLive(market: Market, viewer: { account: Account } | null): Promise<Initial> {
-  const [view, history, tape, comments, portfolio, venue] = await Promise.all([
+  const [view, history, tape, comments, portfolio, venue, peers] = await Promise.all([
     marketView(market),
     priceHistory(market, { limit: 10_000 }),
     marketTape(market, { limit: TAPE_LIMIT }),
     listComments(market.id, { limit: COMMENT_PAGE, viewerAccountId: viewer?.account.id ?? null }),
     viewer ? getPortfolio(viewer.account.id, undefined, market.id) : null,
     venueField(market),
+    peerField(market),
   ]);
   events.log('market.read', { accountId: viewer?.account.id ?? null, marketId: market.id });
 
@@ -36,6 +37,7 @@ export async function loadMarketLive(market: Market, viewer: { account: Account 
     tape: { orders: tape.rows.map(presentTapeEntry), nextCursor: tape.nextCursor } as z.output<typeof S.Tape>,
     comments: presentComments(comments) as z.output<typeof S.CommentList>,
     venue,
+    peers,
     portfolio: portfolio ? (presentPortfolio(portfolio) as z.output<typeof S.Portfolio>) : null,
     viewer: viewer
       ? { signedIn: true, canTrade: viewer.account.isBot || viewer.account.verifiedAt !== null }

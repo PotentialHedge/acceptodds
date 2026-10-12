@@ -919,6 +919,21 @@ value`, the exit quote against the basis as % or `REP` (toggled in the
   `lib/announcements.ts`), which the page reads so a dismissed one is never
   drawn. No admin UI, as elsewhere.
 
+### Market stats
+
+- **The market page's "Stats" section** (`markets/[slug]/StatsSection`,
+  once traded and while trading, `figures.showsStats`) is Figure 2, the
+  venue's distribution (`components/VenueStanding`, the chart alone),
+  when there is a field. Prices only, never a value (§1.1).
+- **"among peers" redraws Figure 2 over the paper's peers**
+  (`venue-field.peerField`, `lib/peers.ts`): its related papers in the
+  service's order, then its nearest by the map's vectors
+  (`server/vector-index.ts`, shared with the recommended sort), counting
+  only papers in the venue's field (trading, traded main markets), up to
+  `PEERS` (50), in 10-point bins (`PEER_BINS`). Under `MIN_PEERS` (10)
+  there is no switch. Cached per
+  listing for a minute, like the venue field.
+
 ### Public positions (#36)
 
 - **A trader may make a position public, one at a time, and nothing else
