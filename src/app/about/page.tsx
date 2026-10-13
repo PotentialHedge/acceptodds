@@ -54,7 +54,7 @@ export default async function AboutPage() {
   const busiest =
     viewer === null
       ? (await browseListings({ kind: await currentVenue(), status: 'open', sort: 'volume', traded: true, limit: 1 }))
-        .rows[0]?.listing
+          .rows[0]?.listing
       : undefined;
   const [tutorialExample] = busiest
     ? ((await listingViews([busiest])).map(presentListing) as z.output<typeof S.Listing>[])
