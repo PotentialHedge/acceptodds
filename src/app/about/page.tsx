@@ -54,7 +54,7 @@ export default async function AboutPage() {
   const busiest =
     viewer === null
       ? (await browseListings({ kind: await currentVenue(), status: 'open', sort: 'volume', traded: true, limit: 1 }))
-          .rows[0]?.listing
+        .rows[0]?.listing
       : undefined;
   const [tutorialExample] = busiest
     ? ((await listingViews([busiest])).map(presentListing) as z.output<typeof S.Listing>[])
@@ -70,7 +70,7 @@ export default async function AboutPage() {
         byline={<Authors authors={[{ name: 'Benedict Armstrong', affiliations: ['ETH Zürich'] }]} />}
         abstract={
           <>
-            <Wordmark /> {` `} is a prediction market for papers under review. Every paper has a market on its decision
+            <Wordmark /> {` `} is a prediction market for research papers. Every paper has a market on its decision
             (e.g. Accept or Reject), and its price is what the people trading it think the odds are. Users buy shares in
             the outcome they believe in. Shares can be bought and sold at any time and when a market is settled users
             who are holding the winning outcome are paid out 1 {`${REP}`} for each of their shares. Prices are set by an
