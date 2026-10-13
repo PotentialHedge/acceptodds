@@ -1277,8 +1277,9 @@ unpaginated, and 5 s for that search.
 - **A market carries a `contract`** (`markets.contract`, `POST /markets`):
   Markdown saying in detail how it resolves, edge cases included. Opaque,
   supplied whole by the creating client, shown on the market's page under
-  "Contract" and never interpreted here. `description` is the short blurb and
-  stays free for anything else.
+  "Contract" and never interpreted here. `description` is the market's
+  **subtitle**, one line under the question, so the question can stay short
+  and the detail sit there; a venue sets it with `market.subtitle`.
 - **Outcomes are ordered best first, worst last, and the headline is
   `1 − P(last)`** (`lib/headline.ts`) — for a paper, accepted in any form.
   For a binary `[YES, NO]` market that is exactly P(YES), so binary markets
@@ -1427,8 +1428,11 @@ unpaginated, and 5 s for that search.
   50/50): `venues.pricedBeforeTrade` (and `pricedBeforeTradeKinds` in the
   SQL) shows it from the start and sorts it with the traded rows.
 - **The market is the kind's template** (`market-templates.ts`, from
-  `venues/`: `ICLR 2027`, and `OpenAI Math`, "independently verified by
-  the end of 2027", `Verified`/`Not verified`, open until 2028), slug
+  `venues/`: `ICLR 2027`; `OpenAI Math`, "independently verified by
+  the end of 2027", `Verified`/`Not verified`, open until 2028; and
+  `NeurIPS 2026`, whose decisions were out before it opened, so it trades
+  citations: `Top 25%`/`Not top 25%` of the paper's own track by Semantic
+  Scholar count on 2027-12-01, opening at 25% with no JEV call), slug
   `<listing>-decision`, rank 0, `created_by` the trader who opened it.
   `created_by` is stored, never shown: the tape is anonymous, and
   "opened by @x" would point at the first fill. Whoever opens it follows the
@@ -1783,7 +1787,7 @@ volume trades`, with aliases), `!= > < >= <=` on numbers, `"quotes"`,
 
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 

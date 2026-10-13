@@ -170,8 +170,11 @@ export function MarketLive({
           {market.question}
         </h1>
       )}
+      {/* The subtitle: the question stays short and the detail is here. */}
       {market.description && (
-        <div className="mx-auto max-w-[640px] text-center text-sm text-muted">{market.description}</div>
+        <div className="mx-auto mt-3 max-w-[640px] text-center text-[14px] leading-[1.55] text-muted">
+          {market.description}
+        </div>
       )}
 
       {barred && headline !== null ? (

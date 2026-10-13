@@ -71,7 +71,10 @@ export interface Venue {
   // --- the market a listing opens on demand (`server/market-start.ts`) ---
 
   market: {
+    /** Short: the market's title. The detail goes in `subtitle` and `contract`. */
     question: string;
+    /** One line under the question (the market's `description`); none when left out. */
+    subtitle?: string;
     /** Markdown, shown on the market's page under "Contract". */
     contract: string;
     /** Best first, worst last: the headline is `1 − P(last)`. */

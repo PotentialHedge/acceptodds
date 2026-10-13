@@ -10,6 +10,8 @@ import { PRICE_FLOOR } from './jev';
  */
 export interface MarketTemplate {
   question: string;
+  /** The line under the question, stored as the market's `description`. */
+  subtitle: string | null;
   contract: string;
   /** Best first: the headline is `1 − P(last)` (`lib/headline.ts`). */
   outcomes: string[];
@@ -31,6 +33,7 @@ function templateOf(v: Venue): MarketTemplate {
   const m = v.market;
   return {
     question: m.question,
+    subtitle: m.subtitle ?? null,
     contract: m.contract,
     outcomes: m.outcomes.map((o) => o.label),
     closesAt: m.closesAt,

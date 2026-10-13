@@ -104,7 +104,10 @@ export const Market = z
     id: Id,
     slug: z.string(),
     question: z.string(),
-    description: z.string().nullable(),
+    description: z
+      .string()
+      .nullable()
+      .meta({ description: 'The subtitle: one line shown under the question, which stays short.' }),
     contract: z
       .string()
       .nullable()
@@ -1102,7 +1105,9 @@ export const CreateMarketRequest = z
   .object({
     slug: Slug,
     question: z.string().min(1).max(500),
-    description: z.string().max(10_000).nullish(),
+    description: z.string().max(10_000).nullish().meta({
+      description: 'The subtitle: one line shown under the question. Keep the question short and put the detail here.',
+    }),
     contract: z.string().max(50_000).nullish().meta({
       description: 'The resolution contract: how the market settles, edge cases included. Markdown, shown to traders.',
     }),

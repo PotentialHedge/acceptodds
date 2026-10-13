@@ -377,11 +377,12 @@ export const markets = pgTable(
       .notNull()
       .default(sql`nextval('short_ids')`),
     question: text('question').notNull(),
+    /** The subtitle: one line under the question, so the question can stay short. */
     description: text('description'),
     /**
      * The market's contract: how it resolves, in detail (edge cases included).
      * Opaque text supplied by the creating client, shown to traders as
-     * Markdown and never interpreted here. `description` is for anything else.
+     * Markdown and never interpreted here.
      */
     contract: text('contract'),
     /** Opaque to the platform. Whatever the creating client wants to group by. */

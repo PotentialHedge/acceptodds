@@ -288,6 +288,7 @@ async function createFromTemplate(
       {
         slug: `${listing.slug}-decision`,
         question: template.question,
+        description: template.subtitle,
         contract: template.contract,
         kind: listing.kind ?? undefined,
         outcomes: template.outcomes,

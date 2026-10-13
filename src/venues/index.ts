@@ -1,4 +1,5 @@
 import { ICLR_2027 } from './iclr-2027';
+import { NEURIPS_2026 } from './neurips-2026';
 import { OPENAI_MATH } from './openai-math';
 import type { OutcomeColor, Venue } from './types';
 
@@ -10,7 +11,7 @@ export type { OutcomeColor, Venue, VenueOutcome } from './types';
  * checks its prices, colours and lengths). Its listings' `kind` must be the
  * venue's `kind` exactly.
  */
-const VENUES: readonly Venue[] = [ICLR_2027, OPENAI_MATH];
+const VENUES: readonly Venue[] = [ICLR_2027, OPENAI_MATH, NEURIPS_2026];
 
 const BY_KIND = new Map(VENUES.map((v) => [v.kind, v]));
 
