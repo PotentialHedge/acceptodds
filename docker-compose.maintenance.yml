@@ -1,0 +1,38 @@
+# Maintenance page: "Trading has been paused, acceptodds will be back soon."
+#
+# A static nginx whose Traefik router claims the same hosts as the app at a
+# higher priority, so while it is up every request — pages and /api/v1 alike,
+# so no order can be placed — gets a 503 with maintenance/index.html (JSON
+# under /api/). The app, its database and the host crons are not touched;
+# taking this down hands the hosts straight back to the app.
+#
+#   docker compose -f docker-compose.maintenance.yml up -d     # pause
+#   docker compose -f docker-compose.maintenance.yml down      # resume
+#
+# MAINTENANCE_RULE picks the hosts; try it on staging first with
+#   MAINTENANCE_RULE='Host(`staging.acceptodds.com`)' docker compose -f docker-compose.maintenance.yml -p acceptodds-maintenance-staging up -d
+
+name: acceptodds-maintenance
+
+services:
+  maintenance:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ./maintenance/index.html:/usr/share/nginx/html/index.html:ro
+      - ./maintenance/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - 'traefik.http.routers.${COMPOSE_PROJECT_NAME:-acceptodds-maintenance}.rule=${MAINTENANCE_RULE:-Host(`acceptodds.com`) || Host(`www.acceptodds.com`)}'
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-acceptodds-maintenance}.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-acceptodds-maintenance}.tls=true
+      # Above the app's router, whose priority defaults to its rule's length.
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-acceptodds-maintenance}.priority=10000
+      - traefik.http.services.${COMPOSE_PROJECT_NAME:-acceptodds-maintenance}.loadbalancer.server.port=80
+
+networks:
+  web:
+    external: true
