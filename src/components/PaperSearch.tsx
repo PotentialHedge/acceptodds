@@ -6,6 +6,7 @@ import type { z } from 'zod';
 import { PaperRow } from '@/components/PaperRow';
 import { ui } from '@/components/ui';
 import { PAPER_SEARCH_LIMIT } from '@/lib/onboarding';
+import { rowLink } from '@/lib/paper-link';
 import { pricedBeforeTrade } from '@/venues';
 import type * as S from '@/server/api/schemas';
 
@@ -99,7 +100,7 @@ export function PaperSearch({
               key={l.id}
               title={l.title}
               authors={l.authors}
-              pdf={l.links.find((link) => link.label.toLowerCase() === 'pdf')}
+              pdf={rowLink(l.links)}
               market={market}
               volumeMicro={traded ? l.markets.reduce((sum, m) => sum + BigInt(m.volumeMicro), 0n) : null}
               spark={market ? (sparks[market.id] ?? []) : []}

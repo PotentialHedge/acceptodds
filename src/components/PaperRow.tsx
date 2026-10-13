@@ -16,7 +16,7 @@ type RowMarket = {
 
 /**
  * One paper in a list, as the home page sets it: the likelihood edge, its
- * [pdf], title and authors, volume, sparkline and headline. The whole row is
+ * link (`lib/paper-link.ts` `rowLink`: its [pdf], else [abs]), title and authors, volume, sparkline and headline. The whole row is
  * one target: a link (`href`), or a button (`onPick`) for a list that
  * chooses rather than navigates (`/welcome`).
  */

@@ -47,6 +47,7 @@ import {
   type BrowseSort,
 } from '@/server/views';
 import { canRecommend } from '@/server/recommendations';
+import { rowLink } from '@/lib/paper-link';
 
 export const dynamic = 'force-dynamic';
 
@@ -628,7 +629,7 @@ function SearchHelp() {
  * the stretched one, in a column of its own at the left so titles align.
  */
 function Row({ r, spark, tldr }: { r: BrowseRow; spark: number[]; tldr: boolean }) {
-  const pdf = r.listing?.links.find((l) => l.label.toLowerCase() === 'pdf');
+  const pdf = rowLink(r.listing?.links ?? []);
   return (
     <PaperRow
       title={r.listing?.title ?? r.main?.market.question ?? ''}
