@@ -67,7 +67,7 @@ export default async function AboutPage() {
             About <Wordmark />
           </>
         }
-        byline={<Authors authors={[{ name: 'Benedict Armstrong', affiliations: ['ETH Zürich'] }]} />}
+        byline={<Authors authors={[{ name: 'Benedict Armstrong', affiliations: [] }]} />}
         abstract={
           <>
             <Wordmark /> {` `} is a prediction market for research papers. Every paper has a market on its decision
