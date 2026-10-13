@@ -1573,19 +1573,20 @@ async function readBrowsePage(
   const offset = q.offset ?? 0;
   const recommendScores =
     q.sort === 'recommended' && q.recommendFor ? await recommendationScores(q.recommendFor, database) : null;
-  const { from, order } = browseQuery({ ...q, recommendScores });
+  const { from, order, searching } = browseQuery({ ...q, recommendScores });
   // The total is its own query, not `count(*) over ()`: a window makes every
   // row of the venue, not just the page's, go through the select list (its
   // casts to text) and into a tuplestore — 4x the page query's time (#12).
-  const [result, total] = await Promise.all([
-    database.execute<{
-      listing_id: string | null;
-      market_id: string | null;
-      volume: string;
-      order_count: number;
-      last_trade_at: string | null;
-      markets: number;
-    }>(sql`
+  const [result, total] = await withSearchPlan(searching, database, (ex) =>
+    Promise.all([
+      ex.execute<{
+        listing_id: string | null;
+        market_id: string | null;
+        volume: string;
+        order_count: number;
+        last_trade_at: string | null;
+        markets: number;
+      }>(sql`
       select l.id as listing_id, m.id as market_id,
              ${ROW_VOLUME}::text as volume,
              ${ROW_ORDERS}::int as order_count,
@@ -1595,10 +1596,9 @@ async function readBrowsePage(
        order by ${sql.join([...order, sql`coalesce(m.id, l.id) desc`], sql`, `)}
        limit ${limit} offset ${offset}
     `),
-    shareCount(
-      async () => (await database.execute<{ n: number }>(sql`select count(*)::int as n ${from}`)).rows[0]?.n ?? 0,
-    ),
-  ]);
+      shareCount(async () => (await ex.execute<{ n: number }>(sql`select count(*)::int as n ${from}`)).rows[0]?.n ?? 0),
+    ]),
+  );
 
   const found = result.rows;
   // Past the end, or nothing at all: the page is empty, the total is not.
@@ -1678,7 +1678,35 @@ const ROW_ORDERS = sql`(coalesce(m.order_count, 0) + coalesce(sec.order_count, 0
  * Shared by `browseListings` and `mapSearch`, so the map's search is the
  * home page's.
  */
-function browseQuery(q: BrowseFilter): { from: SQL; order: SQL[] } {
+type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
+
+/**
+ * Runs a search's reads with nested loops off, in a transaction of its own
+ * (`set local`, so nothing else's plan changes). The rows a venue's filter
+ * keeps cannot be estimated over the full join: `m.id is null` is read from
+ * the column's null fraction, about 0, though it is every listing nobody has
+ * traded. For a venue whose papers have no markets yet (NeurIPS 2026 on
+ * staging) the planner guessed 1 row, joined 9k rows to 22k hits by a nested
+ * loop, and a search for "ads" took 50 s against the 15 s statement timeout;
+ * with this, 1.5 s, the same as a venue with markets. Rewriting the filter
+ * (`rowKindIs`) only moves the bad guess, as the coalesce form did (#12).
+ */
+async function withSearchPlan<T>(
+  searching: boolean,
+  database: Database,
+  read: (ex: Database | Tx) => Promise<T>,
+): Promise<T> {
+  if (!searching) return read(database);
+  return database.transaction(async (tx) => {
+    await tx.execute(sql`set local enable_nestloop = off`);
+    const out = await read(tx);
+    // Inside a caller's transaction this is a savepoint, and `set local` would outlive it.
+    await tx.execute(sql`set local enable_nestloop to default`);
+    return out;
+  });
+}
+
+function browseQuery(q: BrowseFilter): { from: SQL; order: SQL[]; searching: boolean } {
   const text = normalizeSearch(q.q);
   const node = text === null ? null : parseSearch(text).node;
   const required = requiredText(node);
@@ -1763,7 +1791,7 @@ function browseQuery(q: BrowseFilter): { from: SQL; order: SQL[] } {
          group by s.listing_id
       ) sec on sec.listing_id = l.id
      where ${where.length > 0 ? sql.join(where, sql` and `) : sql`true`}`;
-  return { from, order };
+  return { from, order, searching: tq !== null };
 }
 
 /**
@@ -1782,11 +1810,13 @@ export async function mapSearch(
   // Nothing usable ("(", "author:", "-"): no terms, so no match — not every paper.
   const { node, errors } = parseSearch(text);
   if (node === null) return { slugs: [], errors };
-  const { from, order } = browseQuery({ q: text, kind, status: 'all', sort: 'relevance' });
-  const result = await database.execute<{ slug: string }>(sql`
-    select l.slug ${from} and l.slug is not null
-     order by ${sql.join([...order, sql`l.id desc`], sql`, `)}
-  `);
+  const { from, order, searching } = browseQuery({ q: text, kind, status: 'all', sort: 'relevance' });
+  const result = await withSearchPlan(searching, database, (ex) =>
+    ex.execute<{ slug: string }>(sql`
+      select l.slug ${from} and l.slug is not null
+       order by ${sql.join([...order, sql`l.id desc`], sql`, `)}
+    `),
+  );
   return { slugs: result.rows.map((r) => r.slug), errors };
 }
 

@@ -430,7 +430,7 @@ describe('browsing markets', () => {
   it('filters by kind and status, and sorts by closing, volume, activity and newest', async () => {
     const a = await extra('a', 'ICLR 2027', 30);
     const b = await extra('b', 'ICLR 2027', 10);
-    const c = await extra('c', 'NeurIPS 2026', 5);
+    const c = await extra('c', 'NeurIPS 2025', 5);
     const t = await trader('t');
     await buy(t.token, a.outcomeIds[0], '50000000', a.marketId); // most volume
     await buy(t.token, b.outcomeIds[0], '5000000', b.marketId); // most recent
@@ -443,12 +443,12 @@ describe('browsing markets', () => {
     expect(await slugs({ kind: 'ICLR 2027', sort: 'newest' })).toEqual(['b', 'a']);
     // Traded rows first, whatever the sort; then the untraded, by the same sort.
     expect(await slugs({ kind: null, sort: 'closing' })).toEqual(['b', 'a', 'concurrency', 'c']);
-    expect(await slugs({ kind: 'NeurIPS 2026', status: 'settled', sort: 'closing' })).toEqual([]);
+    expect(await slugs({ kind: 'NeurIPS 2025', status: 'settled', sort: 'closing' })).toEqual([]);
     void c;
 
     expect(await marketKinds()).toEqual([
       { kind: 'ICLR 2027', count: 2 },
-      { kind: 'NeurIPS 2026', count: 1 },
+      { kind: 'NeurIPS 2025', count: 1 },
       { kind: 'binary', count: 1 },
     ]);
   });
