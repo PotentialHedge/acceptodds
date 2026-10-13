@@ -11,8 +11,8 @@ import {
   type InteractionKind,
   type Vote,
 } from '@/lib/recommend';
-import { mapCached } from './map-cache';
 import { ReadCache } from './read-cache';
+import { nearestIn, vectorIndexes, type VectorIndex } from './vector-index';
 
 /**
  * The home list's `recommended` sort: what is near the papers the viewer
@@ -41,68 +41,9 @@ export const MIN_INTERACTIONS = 2;
 const scoreReads = new ReadCache(200);
 const SCORES_TTL_MS = 60_000;
 
-/** How long the vectors stay in memory; `setMap` drops them sooner (`map-cache.ts`). */
-const VECTORS_TTL_MS = 3_600_000;
-
-/**
- * Every listed paper on one venue's map with a vector, unit length, packed
- * `dims` floats apiece. One per map: each venue's vectors are its own
- * service run's, and a distance between two maps' means nothing.
- */
-interface VectorIndex {
-  ids: string[];
-  row: Map<string, number>;
-  dims: number;
-  data: Float32Array;
-}
-
-function vectorIndexes(database: Database): Promise<VectorIndex[]> {
-  const compute = async (): Promise<VectorIndex[]> => {
-    const result = await database.execute<{ kind: string; id: string; vector: number[] }>(sql`
-      select p.kind, l.id, p.vector from map_points p join listings l on l.slug = p.slug where p.vector is not null
-    `);
-    const byKind = Map.groupBy(
-      result.rows.filter((r) => r.vector.length > 0),
-      (r) => r.kind,
-    );
-    return [...byKind.values()].map((rows) => {
-      const dims = rows[0].vector.length;
-      const usable = rows.filter((r) => r.vector.length === dims);
-      const data = new Float32Array(usable.length * dims);
-      usable.forEach((r, i) => {
-        let norm = 0;
-        for (const x of r.vector) norm += x * x;
-        const scale = norm > 0 ? 1 / Math.sqrt(norm) : 0;
-        for (let k = 0; k < dims; k++) data[i * dims + k] = r.vector[k] * scale;
-      });
-      return { ids: usable.map((r) => r.id), row: new Map(usable.map((r, i) => [r.id, i])), dims, data };
-    });
-  };
-  return database === getDb() ? mapCached('recommend:vectors', VECTORS_TTL_MS, compute) : compute();
-}
-
 /** `source`'s nearest papers by cosine on each map it is on, nearest first, at most `NEAREST` a map, never itself. */
 function nearest(indexes: VectorIndex[], source: string): string[] {
-  return indexes.flatMap((index) => nearestIn(index, source));
-}
-
-function nearestIn(index: VectorIndex, source: string): string[] {
-  const i = index.row.get(source);
-  if (i === undefined) return [];
-  const { data, dims } = index;
-  // The best so far, weakest first.
-  const best: { j: number; s: number }[] = [];
-  for (let j = 0; j < index.ids.length; j++) {
-    if (j === i) continue;
-    let s = 0;
-    for (let k = 0; k < dims; k++) s += data[i * dims + k] * data[j * dims + k];
-    if (best.length === NEAREST && s <= best[0].s) continue;
-    if (best.length === NEAREST) best.shift();
-    let at = 0;
-    while (at < best.length && best[at].s < s) at++;
-    best.splice(at, 0, { j, s });
-  }
-  return best.reverse().map((b) => index.ids[b.j]);
+  return indexes.flatMap((index) => nearestIn(index, source, NEAREST));
 }
 
 /** The viewer's own acts on listings: per listing and kind, the latest. */

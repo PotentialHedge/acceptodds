@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ui } from '@/components/ui';
 import { countBelow } from '@/lib/distribution';
 import { percentAhead, standingBand } from '@/lib/leaderboard';
 import type { VenueField } from '@/server/venue-field';
@@ -10,28 +9,32 @@ import type { VenueField } from '@/server/venue-field';
  * A paper's place among the papers at its venue: the distribution of their
  * headlines (the chance of acceptance) with this paper's marked and the share
  * of papers below it shaded. Prices, never values (§1.1). The field is the
- * server's, a minute old at most; the marker is the live headline.
+ * server's, a minute old at most; the marker is the live headline. The chart
+ * alone: the paper page sets it as panel (a) of its Stats figure, which
+ * captions it.
  *
  * Shares only, never how many papers: a bin's hover is its share of the
- * venue, and the caption names no count.
+ * venue, and the caption names no count. `among` names the field for a
+ * screen reader: the venue's papers by default, or a subset (its peers).
  */
-export function VenueStanding({ field, headline }: { field: VenueField; headline: number }) {
+export function VenueStanding({
+  field,
+  headline,
+  among = `papers at ${field.kind}`,
+}: {
+  field: VenueField;
+  headline: number;
+  among?: string;
+}) {
   const percent = headline * 100;
   const ahead = percentAhead(countBelow(field.values, percent), field.values.length);
   return (
-    <section className="mt-10">
-      <h3 className={`${ui.section} mb-3`}>Among papers at {field.kind.toLocaleLowerCase()}</h3>
-      <Bars
-        bins={field.bins}
-        you={percent}
-        label={ahead === null ? 'this paper' : `this paper, ${standingBand(ahead)}`}
-        kind={field.kind}
-      />
-      <div className={ui.caption}>
-        <b>Figure 2.</b> The chance of acceptance of the papers trading at {field.kind}, in bins of 5 points; this
-        paper&rsquo;s bin is marked and the bins the market rates less likely are shaded.
-      </div>
-    </section>
+    <Bars
+      bins={field.bins}
+      you={percent}
+      label={ahead === null ? 'this paper' : `this paper, ${standingBand(ahead)}`}
+      among={among}
+    />
   );
 }
 
@@ -40,7 +43,7 @@ const PAD = { top: 26, right: 12, bottom: 26, left: 12 };
 const GAP = 2;
 
 /** One bar per bin of the venue's headlines; the paper's bin in the accent, those below it tinted. */
-function Bars({ bins, you, label, kind }: { bins: number[]; you: number; label: string; kind: string }) {
+function Bars({ bins, you, label, among }: { bins: number[]; you: number; label: string; among: string }) {
   const box = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(720);
   const [hover, setHover] = useState<number | null>(null);
@@ -76,7 +79,7 @@ function Bars({ bins, you, label, kind }: { bins: number[]; you: number; label: 
         width={width}
         height={HEIGHT}
         role="img"
-        aria-label={`Chance of acceptance of papers at ${kind}; ${label}`}
+        aria-label={`Chance of acceptance of ${among}; ${label}`}
         className="block overflow-visible"
         onPointerLeave={() => setHover(null)}
       >

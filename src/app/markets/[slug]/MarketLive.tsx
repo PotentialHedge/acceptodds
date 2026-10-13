@@ -11,7 +11,6 @@ import { OddsBar } from '@/components/OutcomeBar';
 import { PositionsTable } from '@/components/PositionsTable';
 import { PriceChart, type ChartPoint } from '@/components/PriceChart';
 import { ui } from '@/components/ui';
-import { VenueStanding } from '@/components/VenueStanding';
 import { usePassed } from '@/components/usePassed';
 import { marketPollInterval, tapePollInterval } from '@/lib/market-poll';
 import { day, pct } from '@/lib/format';
@@ -21,9 +20,10 @@ import { welcomeBetHref } from '@/lib/onboarding';
 import type { VenueField } from '@/server/venue-field';
 import type * as S from '@/server/api/schemas';
 import { Comments, TradeComment, type ExplainedTrade } from './Comments';
-import { showsVenueStanding } from './figures';
+import { showsStats } from './figures';
 import { TAPE_LIMIT } from './tape';
 import { TapeTable } from './TapeTable';
+import { StatsSection } from './StatsSection';
 import { FirstTrade } from './FirstTrade';
 import { TradeBox } from './TradeBox';
 import { venue } from '@/venues';
@@ -41,6 +41,8 @@ export interface Initial {
   portfolio: Portfolio | null;
   /** The venue's headlines, for a main market that is still trading; else `null`. */
   venue: VenueField | null;
+  /** The same over the paper's peers (`peerField`), or `null` when it has too few. */
+  peers: VenueField | null;
   viewer: { signedIn: boolean; canTrade: boolean };
   /** What a new account starts with: a visitor's balance in the trade box. */
   startingBalanceMicro: string;
@@ -309,9 +311,9 @@ export function MarketLive({
         />
       )}
 
-      {/* Only once it has traded: before that, its price is the opening one, not a belief. */}
-      {initial.venue && headline !== null && showsVenueStanding(market, true) && (
-        <VenueStanding field={initial.venue} headline={headline} />
+      {/* Only once it has traded (before that, its price is the opening one, not a belief) and while trading. */}
+      {initial.venue && headline !== null && showsStats(market) && (
+        <StatsSection venue={initial.venue} peers={initial.peers} headline={headline} />
       )}
 
       {beforeDiscussion}

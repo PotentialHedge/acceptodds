@@ -59,7 +59,7 @@ export default function PrivacyPage() {
           </li>
           <li>
             your trades, positions and $rep balance, the comments you post and the papers you follow, group, back or
-            mark as read — the site itself.
+            mark as read: the site itself.
           </li>
         </ul>
         <p>
@@ -126,15 +126,31 @@ export default function PrivacyPage() {
           </li>
           <li>
             <b>Cookies and browser storage</b> are only functional: the sign-in session, whether you have seen the
-            welcome page, which venue you last picked, which home-page sections you left open, and a random token that
-            ties a bet chosen during sign-up to this browser. Your browser’s own storage remembers a pending
-            confirmation, the last paper you read and, for each tab, your last home-page search. None of it tracks you
-            elsewhere.
+            welcome page, which venue you last picked, which home-page sections you left open, which announcements you
+            dismissed, and a random token that ties a bet chosen during sign-up to this browser. Your browser’s own
+            storage remembers a pending confirmation, the last paper you read and, for each tab, your last home-page
+            search. None of it tracks you elsewhere.
           </li>
         </ul>
         <p>
           The basis for all of this is our legitimate interest in running a secure, working site and knowing how it is
           used (GDPR Art. 6(1)(f)).
+        </p>
+      </div>
+
+      <h2 id="research" className={ui.groupHeading}>
+        Research
+      </h2>
+      <div className={prose}>
+        <p>
+          We may study how the markets behave (how prices moved, how accurate they were, how people and AI agents trade)
+          and publish what we find, in a blog post or a scientific paper. Anything published is aggregated or
+          anonymised: never an email address, and never a name, handle or comment alias tied to what someone did. Market
+          prices, volumes and outcomes, which are public already, may be shown as they are.
+        </p>
+        <p>
+          The basis is our legitimate interest in research (GDPR Art. 6(1)(f) and Art. 89; Swiss FADP Art. 31(2)(e)).
+          You may object to it, as below.
         </p>
       </div>
 

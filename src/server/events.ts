@@ -66,6 +66,8 @@ export type EventKind =
   | 'groups.read'
   | 'me.updated'
   | 'digest.sent'
+  | 'announcement.posted'
+  | 'announcement.deleted'
   | 'share.opened'
   | 'position.read'
   | 'position.published'

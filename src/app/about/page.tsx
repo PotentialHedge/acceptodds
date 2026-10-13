@@ -1,15 +1,23 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import type { z } from 'zod';
 import { EqRef, Equation } from '@/components/Equation';
 import { MathText } from '@/components/MathText';
 import { Authors } from '@/components/Authors';
 import { Cite, References } from '@/components/References';
 import { TitleBlock } from '@/components/TitleBlock';
+import { TutorialModal } from '@/components/TutorialModal';
 import { ui } from '@/components/ui';
 import { REPO_URL } from '@/lib/links';
 import { Wordmark } from '@/components/Wordmark';
 import { rep, REP } from '@/lib/format';
 import { startingBalanceMicro } from '@/server/accounts';
+import type * as S from '@/server/api/schemas';
+import { presentListing } from '@/server/api/present';
+import { viewerFromHeaders } from '@/server/auth';
+import { currentVenue } from '@/server/current-venue';
+import { browseListings, listingViews } from '@/server/views';
 import { venues } from '@/venues';
 
 // The starting balance is read from the environment at request time.
@@ -39,8 +47,18 @@ const prose = 'mt-2 space-y-3 leading-relaxed';
  * Cross-references to sections ("§5") are written by hand, like the
  * equation and reference numbers: reorder the sections, fix them.
  */
-export default function AboutPage() {
+export default async function AboutPage() {
   const start = `${rep(startingBalanceMicro(), 0)} ${REP}`;
+  // Signed out, the home page's tutorial, on the same example: the navbar venue's most traded open paper.
+  const viewer = await viewerFromHeaders(await headers());
+  const busiest =
+    viewer === null
+      ? (await browseListings({ kind: await currentVenue(), status: 'open', sort: 'volume', traded: true, limit: 1 }))
+          .rows[0]?.listing
+      : undefined;
+  const [tutorialExample] = busiest
+    ? ((await listingViews([busiest])).map(presentListing) as z.output<typeof S.Listing>[])
+    : [];
   return (
     <main className={`${ui.page} max-w-160`}>
       <TitleBlock
@@ -73,6 +91,15 @@ export default function AboutPage() {
             [Wasserman Paper]
           </a>
         </div> */}
+        {viewer === null && (
+          <div className="mt-4 flex flex-wrap items-baseline justify-center gap-x-6">
+            <TutorialModal
+              example={tutorialExample}
+              startingBalanceMicro={startingBalanceMicro().toString()}
+              signedIn={false}
+            />
+          </div>
+        )}
       </TitleBlock>
 
       <h2 id="why" className={ui.groupHeading}>
@@ -81,9 +108,13 @@ export default function AboutPage() {
       <div className={prose}>
         <p>
           Peer review decides which papers a conference accepts, and it is noisy: two equally qualified referees can
-          reach opposite verdicts on the same paper <Cite n={1} />. A market asks a different question — not what two or
-          three referees will say, but what everyone who has read the paper expects them to — and puts a number on the
-          answer that anyone can check against the decision.
+          reach opposite verdicts on the same paper <Cite n={1} />. A market asks a different question: not what two or
+          three referees will say, but what everyone who has read the paper expects them to. It then puts a number on
+          the answer that anyone can check against the decision.
+        </p>
+        <p>
+          It is not meant as a replacement for peer review. Referees read a paper closely and tell its authors how to
+          improve it; a price does neither. The market only forecasts what the review process will decide.
         </p>
         <p>
           A trader who is right before the decision gains reputation, and one who is wrong loses it, so over many papers
@@ -149,7 +180,7 @@ export default function AboutPage() {
         </p>
         <p>
           Buying moves the price <EqRef n={2} />. Each share you buy makes the next one dearer, so a large stake pays a
-          higher average price than the one shown before you bought — the box shows the price before and after your
+          higher average price than the one shown before you bought. The box shows the price before and after your
           trade.
         </p>
         <p>
@@ -168,8 +199,8 @@ export default function AboutPage() {
         </p>
         <p>
           Selling moves the price down as you sell, so selling a holding pays <b>less</b> than its shares times the
-          current price. That is why your positions show a “current value” — what selling everything now would actually
-          pay — and not shares × price. Right after a buy it is a little below what you paid: buying and immediately
+          current price. That is why your positions show a “current value”, what selling everything now would actually
+          pay, and not shares × price. Right after a buy it is a little below what you paid: buying and immediately
           selling back loses a little, never gains.
         </p>
       </div>
@@ -197,9 +228,9 @@ export default function AboutPage() {
           <span className="font-mono">{REP}</span>, always in the house’s favour.
         </p>
         <p>
-          The depth <MathText text="$b$" /> — how far a given stake moves the price — is sized when the market is
-          created, from the number of traders expected and the starting balance, so no single trader can pin a price on
-          their own. It is then fixed for the life of the market. The house funds each market maker with
+          The depth <MathText text="$b$" />, how far a given stake moves the price, is sized when the market is created,
+          from the number of traders expected and the starting balance, so no single trader can pin a price on their
+          own. It is then fixed for the life of the market. The house funds each market maker with
         </p>
         <Equation n={3} tex={String.raw`b \ln n,`} />
         <p>

@@ -1151,6 +1151,26 @@ export const fieldSnapshots = pgTable(
   (t) => [primaryKey({ columns: [t.basis, t.kind] })],
 );
 
+/**
+ * Messages set at the top of the home page by an admin (`server/announcements.ts`,
+ * `POST /announcements`): Markdown, for one venue (`kind`) or, null, for every
+ * venue, shown until `expires_at` or until deleted, to signed-in readers only when
+ * `signed_in_only`. No foreign keys: nothing
+ * else refers to one, and it is never read inside a trade.
+ */
+export const announcements = pgTable(
+  'announcements',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    body: text('body').notNull(),
+    kind: text('kind'),
+    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }),
+    signedInOnly: boolean('signed_in_only').notNull().default(false),
+    createdAt: createdAt(),
+  },
+  (t) => [index('announcements_created_idx').on(t.createdAt)],
+);
+
 export type Account = typeof accounts.$inferSelect;
 export type Wallet = typeof wallets.$inferSelect;
 export type Listing = typeof listings.$inferSelect;
@@ -1162,6 +1182,7 @@ export type Position = typeof positions.$inferSelect;
 export type CommentBacking = typeof commentBackings.$inferSelect;
 export type Affiliation = typeof affiliations.$inferSelect;
 export type PendingBet = typeof pendingBets.$inferSelect;
+export type Announcement = typeof announcements.$inferSelect;
 export type PublicPosition = typeof publicPositions.$inferSelect;
 /** What an API credential may do. Stored as the API-key plugin's permissions, `{ api: [...] }`. */
 export const TOKEN_SCOPES = ['read', 'trade', 'admin'] as const;
