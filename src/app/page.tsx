@@ -6,6 +6,7 @@ import { Collapsible } from '@/components/Collapsible';
 import { FilterIcon, MoreIcon } from '@/components/icons';
 import { Pager } from '@/components/Pager';
 import { SearchSyntax } from '@/components/SearchSyntax';
+import { SearchInput } from '@/components/SearchInput';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/Popover';
 import { PaperRow } from '@/components/PaperRow';
 import { ScrollingLink } from '@/components/ScrollLink';
@@ -354,8 +355,7 @@ export default async function Home({
         <input type="hidden" name="status" value={status} />
         {onlyFollowed && <input type="hidden" name="following" value="1" />}
         {showTldr && <input type="hidden" name="tldr" value="1" />}
-        <input
-          type="search"
+        <SearchInput
           name="q"
           defaultValue={q ?? ''}
           maxLength={SEARCH_MAX_LENGTH}
@@ -436,8 +436,7 @@ export default async function Home({
             <>
               {' '}
               in {kindFilter ?? 'all venues'}
-              {statusFilter !== 'all' && `, ${statusFilter}`}.{' '}
-              <Link href={href({ kind: 'all', status: 'all' })}>search everything</Link>
+              {statusFilter !== 'all' && `, ${statusFilter}`}.
             </>
           )}{' '}
           <Link href={href({ q: '' })}>clear</Link>
