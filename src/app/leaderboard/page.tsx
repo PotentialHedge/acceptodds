@@ -10,6 +10,7 @@ import { Pager } from '@/components/Pager';
 import { RememberVenue } from '@/components/RememberVenue';
 import { Pnl, PnlToggleHeading, PnlToggleProvider } from '@/components/PnlToggle';
 import { FieldCurve } from '@/components/FieldCurve';
+import { SearchInput } from '@/components/SearchInput';
 import { TableNotes } from '@/components/TableNotes';
 import { TitleBlock } from '@/components/TitleBlock';
 import { ui } from '@/components/ui';
@@ -267,8 +268,7 @@ export default async function LeaderboardPage({
         {basis !== 'net_worth' && <input type="hidden" name="basis" value={basis} />}
         {institution && <input type="hidden" name="institution" value={institution} />}
         {group && <input type="hidden" name="group" value={group.id} />}
-        <input
-          type="search"
+        <SearchInput
           name="q"
           defaultValue={q ?? ''}
           maxLength={SEARCH_MAX_LENGTH}

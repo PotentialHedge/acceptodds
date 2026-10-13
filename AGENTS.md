@@ -752,8 +752,8 @@ value`, the exit quote against the basis as % or `REP` (toggled in the
   payout − buys, the ledger's own integers; it is not a mark (§1.1).
 - **"Venue" is the market's `kind`.** The home page lists the navbar's
   venue (§1.8) when it has papers, else every venue; its links carry no
-  `kind`, except `?kind=all` (every venue), which only a search reaches,
-  by "search everything".
+  `kind`, except `?kind=all` (every venue), which only a search from
+  the every-venue list carries.
   The platform still knows nothing about venues: it is a string the creating
   client chose. Sorts: activity (the default: last fill), odds (the
   `likelihood` sort: the main market's **headline** (#11, below), highest
@@ -889,9 +889,10 @@ value`, the exit quote against the basis as % or `REP` (toggled in the
   Per-market results are cached for 30 s and invalidated after fills.
 - **The home page search box is a plain GET form** (`?q=`, works without
   JS). It carries the current venue and status, so a search stays inside
-  them — the result line says where and links "search everything" — and
+  them — the result line says where — and
   sorts by `relevance` (listed only while searching) unless another sort is
-  picked; every filter link keeps `q`, "clear" drops it.
+  picked; every filter link keeps `q`, "clear" drops it, and so does the
+  box's own × (`components/SearchInput` submits the emptied form).
 - **"Join traders from"** (`components/InstitutionStrip`, signed out and
   not searching): a slow strip of institution names under the home page's
   title, read from `views.traderInstitutions`, only those with at least
