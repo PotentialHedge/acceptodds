@@ -15,6 +15,7 @@ import { RunningHead } from '@/components/RunningHead';
 import { TitleBlock } from '@/components/TitleBlock';
 import { ViewCount } from '@/components/ViewCount';
 import { ui } from '@/components/ui';
+import { externalLinks } from '@/lib/external-links';
 import { pct } from '@/lib/format';
 import { marketHeadline, shareTitleLine } from '@/lib/headline';
 import { JEV_PRICE_PARAM, shortPath } from '@/lib/links';
@@ -137,6 +138,8 @@ export default async function PaperPage({
       ? opening !== null
       : main.orderCount === 0 && (await tradingMarketIds([main.market.id])).length > 0;
   const venueOf = listing.kind ?? main?.market.kind ?? null;
+  // Where else to look the paper up (#34), after the links the client supplied: a search for its title, muted so the two kinds stay apart.
+  const lookups = externalLinks(listing);
   events.log('listing.read', { accountId: viewer?.account.id ?? null });
   // Before the discussion, its figure numbered after the market's own.
   const relatedPapers = (
@@ -165,10 +168,23 @@ export default async function PaperPage({
         abstract={listing.summary}
         abstractMath
       >
-        {listing.links.length > 0 && (
+        {(listing.links.length > 0 || lookups.length > 0) && (
           <div className="mt-1.5 flex flex-wrap justify-center gap-x-3 font-sans text-[13px]">
             {listing.links.map((l) => (
               <a key={l.url} href={l.url} className="text-accent" rel="noopener noreferrer" target="_blank">
+                [{l.label}]
+              </a>
+            ))}
+            {listing.links.length > 0 && lookups.length > 0 && <span className="text-faint">·</span>}
+            {lookups.map((l) => (
+              <a
+                key={l.url}
+                href={l.url}
+                className="text-muted underline"
+                rel="noopener noreferrer"
+                target="_blank"
+                title={`Search for this paper on ${l.label}`}
+              >
                 [{l.label}]
               </a>
             ))}
