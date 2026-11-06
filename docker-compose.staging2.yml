@@ -1,0 +1,69 @@
+# Staging2: https://staging2.acceptodds.com — the market (betting) edition, for
+# showing it now that staging runs the Safe for work edition.
+#
+# Runs the last market-edition image (acceptodds-app:0c13b52) against the
+# `staging2` database inside acceptodds-staging-postgres-1: the market
+# edition's final production backup
+# (~/backups/acceptodds/hourly/acceptodds-20261013T172040Z.dump, taken after
+# its app stopped), scrubbed with scripts/staging-scrub.sql and anonymized with
+# scripts/staging-anonymize.sql (ADMIN_EMAILS kept). Test login
+# test@acceptodds.com, password in ~/.config/acceptodds/staging2-test-account.
+# No database of its own, so nothing here touches staging's or production's data.
+#
+# .env.staging2 is .env.staging with the staging2 host, its own
+# BETTER_AUTH_SECRET, DATABASE_URL on /staging2, and no mail/model/analytics
+# keys. Same basic-auth users as staging.
+#
+#   docker compose -f docker-compose.staging2.yml --env-file .env.staging2 up -d
+#   docker compose -f docker-compose.staging2.yml --env-file .env.staging2 down   # when done
+
+name: acceptodds-staging2
+
+services:
+  app:
+    image: acceptodds-app:0c13b52
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    env_file: .env.staging2
+    networks:
+      - staging
+      - web
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.acceptodds-staging2.rule=Host(`staging2.acceptodds.com`)
+      - traefik.http.routers.acceptodds-staging2.entrypoints=websecure
+      - traefik.http.routers.acceptodds-staging2.tls=true
+      - traefik.http.routers.acceptodds-staging2.middlewares=acceptodds-staging2-auth,acceptodds-staging2-headers
+      - traefik.http.services.acceptodds-staging2.loadbalancer.server.port=3000
+      # Basic auth, header stripped before the app (see docker-compose.staging.yml).
+      - traefik.http.middlewares.acceptodds-staging2-auth.basicauth.users=${STAGING_BASIC_AUTH:?set STAGING_BASIC_AUTH in .env.staging2}
+      - traefik.http.middlewares.acceptodds-staging2-auth.basicauth.removeheader=true
+      - traefik.http.middlewares.acceptodds-staging2-auth.basicauth.realm=acceptodds staging2
+      - traefik.http.middlewares.acceptodds-staging2-headers.headers.contenttypenosniff=true
+      - traefik.http.middlewares.acceptodds-staging2-headers.headers.framedeny=true
+      - traefik.http.middlewares.acceptodds-staging2-headers.headers.referrerpolicy=strict-origin-when-cross-origin
+      - traefik.http.middlewares.acceptodds-staging2-headers.headers.customresponseheaders.X-Robots-Tag=noindex, nofollow
+
+networks:
+  staging:
+    name: acceptodds-staging_default
+    external: true
+  web:
+    external: true
