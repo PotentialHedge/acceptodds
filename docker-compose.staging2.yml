@@ -1,7 +1,7 @@
 # Staging2: https://staging2.acceptodds.com — the market (betting) edition, for
 # showing it now that staging runs the Safe for work edition.
 #
-# Runs the last market-edition image (acceptodds-app:0c13b52) against the
+# Runs the last market-edition image (acceptodds-app:ecea050) against the
 # `staging2` database inside acceptodds-staging-postgres-1: the market
 # edition's final production backup
 # (~/backups/acceptodds/hourly/acceptodds-20261013T172040Z.dump, taken after
@@ -21,7 +21,7 @@ name: acceptodds-staging2
 
 services:
   app:
-    image: acceptodds-app:0c13b52
+    image: acceptodds-app:ecea050
     restart: unless-stopped
     logging:
       driver: json-file
