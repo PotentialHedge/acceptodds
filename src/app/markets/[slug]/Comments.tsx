@@ -22,6 +22,10 @@ type Comment = z.output<typeof S.Comment>;
 type Replies = z.output<typeof S.CommentReplies>;
 type Sort = (typeof S.COMMENT_SORTS)[number];
 type Available = { outcomeId: string; outcomeLabel: string; freeMicro: bigint };
+type Reaction = { emoji: string; count: number; mine: boolean };
+
+/** The emoji a comment can be reacted with: the server's allowlist, in the picker's order. */
+const REACTIONS = ['👍', '👎', '😂', '🎉', '🤔', '❤️'] as const;
 
 const fetchJson = (url: string) => fetch(url).then((r) => r.json());
 
@@ -187,6 +191,7 @@ export function Comments({
               marketId,
               outcomeIds,
               canReply: viewer.canTrade,
+              canReact: viewer.signedIn,
               canBack,
               available,
               you,
@@ -223,6 +228,8 @@ interface Tree {
   marketId: string;
   outcomeIds: string[];
   canReply: boolean;
+  /** Signed in: anyone signed in may react. */
+  canReact: boolean;
   canBack: boolean;
   available: Available[];
   /** The viewer's alias on this paper, null until they comment. */
@@ -268,6 +275,7 @@ function Thread({ c, tree }: { c: Comment; tree: Tree }) {
         c={c}
         outcomeIds={tree.outcomeIds}
         canBack={tree.canBack}
+        canReact={tree.canReact}
         available={tree.available}
         you={tree.you}
         onChanged={tree.onChanged}
@@ -460,6 +468,7 @@ function CommentItem({
   c,
   outcomeIds,
   canBack,
+  canReact,
   available,
   you,
   onChanged,
@@ -468,6 +477,7 @@ function CommentItem({
   c: Comment;
   outcomeIds: string[];
   canBack: boolean;
+  canReact: boolean;
   available: Available[];
   you: string | null;
   onChanged: () => void;
@@ -560,6 +570,7 @@ function CommentItem({
             </button>
           </span>
         )}
+        <Reactions commentId={c.id} reactions={c.reactions ?? []} canReact={canReact} onChanged={onChanged} />
         {onReply && (
           <button type="button" className="cursor-pointer underline" onClick={onReply}>
             reply
@@ -584,6 +595,110 @@ function CommentItem({
       )}
       {note && <div className={ui.note(false)}>{note}</div>}
     </div>
+  );
+}
+
+/**
+ * A comment's emoji reactions: one pill per emoji with its count, marked when
+ * the viewer reacted with it, and a picker for the rest. Clicking toggles at
+ * once and reverts if the server refuses; the polled comment list then brings
+ * everyone else's reactions.
+ */
+function Reactions({
+  commentId,
+  reactions,
+  canReact,
+  onChanged,
+}: {
+  commentId: string;
+  reactions: Reaction[];
+  canReact: boolean;
+  onChanged: () => void;
+}) {
+  // The viewer's toggles not yet confirmed by a fresh comment list: emoji → reacted.
+  const [pending, setPending] = useState<Map<string, boolean>>(new Map());
+  const [picking, setPicking] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const serverKey = reactions.map((r) => `${r.emoji}${r.count}${r.mine}`).join();
+  // A fresh list from the server settles every toggle: reset during render, not in an effect.
+  const [settled, setSettled] = useState(serverKey);
+  if (settled !== serverKey) {
+    setSettled(serverKey);
+    setPending(new Map());
+  }
+
+  const shown = REACTIONS.flatMap((emoji): Reaction[] => {
+    const r = reactions.find((x) => x.emoji === emoji) ?? { emoji, count: 0, mine: false };
+    const mine = pending.get(emoji) ?? r.mine;
+    const count = r.count + (mine === r.mine ? 0 : mine ? 1 : -1);
+    return count > 0 ? [{ emoji, count, mine }] : [];
+  });
+  const unused = REACTIONS.filter((e) => !shown.some((r) => r.emoji === e));
+
+  async function toggle(emoji: string, mine: boolean) {
+    if (!canReact) return;
+    setPicking(false);
+    setNote(null);
+    const set = (m: Map<string, boolean>, v: boolean | undefined) => {
+      const next = new Map(m);
+      if (v === undefined) next.delete(emoji);
+      else next.set(emoji, v);
+      return next;
+    };
+    setPending((m) => set(m, !mine));
+    const res = await fetch(`/api/v1/comments/${commentId}/reactions/${encodeURIComponent(emoji)}`, {
+      method: mine ? 'DELETE' : 'PUT',
+    });
+    if (res.ok) return onChanged();
+    setPending((m) => set(m, undefined));
+    setNote(await errorText(res, 'Could not react.'));
+  }
+
+  if (shown.length === 0 && !canReact) return null;
+  return (
+    <span className="inline-flex flex-wrap items-baseline gap-1">
+      {shown.map((r) => (
+        <button
+          key={r.emoji}
+          type="button"
+          className={`rounded-full border px-1.5 font-mono ${r.mine ? 'border-ink text-ink' : 'border-rule'} ${canReact ? 'cursor-pointer hover:border-ink' : 'cursor-default'}`}
+          aria-pressed={r.mine}
+          aria-label={`${r.emoji} ${r.count}${r.mine ? ', yours' : ''}`}
+          onClick={() => void toggle(r.emoji, r.mine)}
+        >
+          {r.emoji} {r.count}
+        </button>
+      ))}
+      {canReact && unused.length > 0 && (
+        <span className="relative">
+          <button
+            type="button"
+            className="cursor-pointer rounded-full border border-rule px-1.5 hover:border-ink"
+            aria-label="Add a reaction"
+            aria-expanded={picking}
+            onClick={() => setPicking((p) => !p)}
+          >
+            +
+          </button>
+          {picking && (
+            <span className="absolute left-0 top-full z-10 mt-1 flex gap-0.5 border border-frame bg-card p-1 shadow-sm">
+              {unused.map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  className="cursor-pointer rounded px-1 text-base hover:bg-rule"
+                  aria-label={`React with ${e}`}
+                  onClick={() => void toggle(e, false)}
+                >
+                  {e}
+                </button>
+              ))}
+            </span>
+          )}
+        </span>
+      )}
+      {note && <span className="text-xs text-red-700">{note}</span>}
+    </span>
   );
 }
 
