@@ -64,6 +64,7 @@ import {
   marketView,
   mapRelated,
   mapTitles,
+  mapExport,
   mapSearch,
   paperMap,
   priceHistory,
@@ -1179,4 +1180,14 @@ async function setGroupReadingList(req: Request, params: Record<string, string |
   return respond(S.ReadingListState, { groupId: id, listingId: listing.id, added }, { principal });
 }
 export const putGroupReadingList = route((req, params) => setGroupReadingList(req, params, true));
-export const deleteGroupReadingList = route((req, params) => setGroupReadingList(req, params, false));
+export const deleteGroupReadingList = route((req, params) =>
+  setGroupReadingList(req, params, false),
+); /** What another site needs to copy the map: OpenReview ids and vectors, by column. Public, cached like the map. */
+export const getMapExport = route(async (req) => {
+  const principal = await authenticate(req);
+  const kind = parseQuery(req, S.MapQuery).kind ?? defaultMarketKind();
+  const prepared = await mapCached(`map/export:${kind}`, MAP_TTL_MS, async () =>
+    prepare(S.MapExport, await mapExport(kind)),
+  );
+  return preparedResponse(req, prepared, { principal, headers: { 'Cache-Control': MAP_CACHE_CONTROL } });
+});

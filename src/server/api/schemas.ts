@@ -325,6 +325,22 @@ export const MapTitles = z
   .object({ titles: z.record(z.string(), z.string()).meta({ description: 'Each listing’s title, by slug.' }) })
   .meta({ id: 'MapTitles', description: 'The title of every listing on the paper map.' });
 
+export const MapExport = z
+  .object({
+    kind: Kind,
+    slugs: column(z.string(), 'Every listing on the map, by slug, sorted, as in `GET /map`.'),
+    openreview: column(z.string().nullable(), 'The listing’s OpenReview forum id, from its OpenReview link.'),
+    vectors: column(
+      z.array(z.number()).nullable(),
+      'The vector supplied with the map (a small embedding), `null` where none was.',
+    ),
+  })
+  .meta({
+    id: 'MapExport',
+    description:
+      'What another site needs to copy a venue’s map: each point’s OpenReview id and vector, in `GET /map`’s order.',
+  });
+
 export const Minimap = z
   .object({
     points: z.array(MapPoint).meta({ description: 'The listing, the papers nearest it and its related papers.' }),

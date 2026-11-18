@@ -321,6 +321,19 @@ export function buildRegistry(): OpenAPIRegistry {
   r.registerPath(
     op({
       method: 'get',
+      path: '/map/export',
+      tags: ['listings'],
+      summary: 'The map, for another site to copy',
+      description:
+        'Each point’s OpenReview forum id and supplied vector, in `GET /map`’s order: with `GET /map`, all another site needs to copy a venue’s map. Public, cached for five minutes.',
+      request: { query: S.MapQuery },
+      ok: { status: 200, schema: S.MapExport, description: 'The ids and vectors.' },
+    }),
+  );
+
+  r.registerPath(
+    op({
+      method: 'get',
       path: '/map/search',
       tags: ['listings'],
       summary: 'Search the paper map',

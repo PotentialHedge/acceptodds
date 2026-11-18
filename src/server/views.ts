@@ -715,6 +715,35 @@ export async function paperMap(kind: string, database: Database = getDb()): Prom
   };
 }
 
+/** A listing's OpenReview forum id, from its OpenReview link; `null` without one. */
+function openreviewIdOf(links: { label: string; url: string }[] | null): string | null {
+  for (const link of links ?? []) {
+    const match = /^https:\/\/openreview\.net\/forum\?id=([A-Za-z0-9_-]+)/.exec(link.url);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+/**
+ * A venue's map for another site to copy (`GET /map/export`): every point's slug, its OpenReview forum id, and its
+ * supplied vector, by column. The layout and groupings are `paperMap`'s; this adds what names a paper elsewhere and
+ * what places it among its neighbours.
+ */
+export async function mapExport(kind: string, database: Database = getDb()) {
+  const rows = await database
+    .select({ slug: mapPoints.slug, vector: mapPoints.vector, links: listings.links })
+    .from(mapPoints)
+    .innerJoin(listings, eq(listings.slug, mapPoints.slug))
+    .where(eq(mapPoints.kind, kind))
+    .orderBy(asc(mapPoints.slug));
+  return {
+    kind,
+    slugs: rows.map((r) => r.slug),
+    openreview: rows.map((r) => openreviewIdOf(r.links)),
+    vectors: rows.map((r) => r.vector ?? null),
+  };
+}
+
 /** The title of every paper on a venue's map, by slug: what `paperMap` leaves out, for a second, later request. */
 export async function mapTitles(kind: string, database: Database = getDb()): Promise<Record<string, string>> {
   const rows = await database
